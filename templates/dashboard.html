@@ -2,9 +2,99 @@
 {% block content %}
 <div class="col-md-12 grid-margin">
     <div class="row">
-        <div class="col-12 col-xl-8 mb-4 mb-xl-0">
-            <h3 class="font-weight-bold">Welcome Dashboard</h3>
+        <div class="card col-md-12 grid-margin stretch-card">
+            <div class="card-body">
+                <div class="row mb-5">
+                    <h3 class="font-weight-bold">Dashboard SIGenz-Sentimen </h3>
+                    <h6 class="font-weight-normal mb-0">Sistem informasi Analisis Sentimen Terhadap Generasi Z dalam
+                        Etika
+                        Kerja Menggunakan Metode Support Vector machine</h6>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 grid-margin transparent">
+                        <div class="row">
+                            <div class="col-md-6 mb-4 stretch-card transparent">
+                                <div class="card card-tale">
+                                    <div class="card-body">
+                                        <p class="mb-4">Total Data</p>
+                                        <p class="fs-30 mb-2">{{jumlah_total}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4 stretch-card transparent">
+                                <div class="card card-dark-blue">
+                                    <div class="card-body">
+                                        <p class="mb-4">Data</p>
+                                        <p class="fs-30 mb-2">61344</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-4 mb-lg-0 stretch-card transparent">
+                                <div class="card card-light-blue">
+                                    <div class="card-body">
+                                        <p class="mb-4">Data Latih</p>
+                                        <p class="fs-30 mb-2">34040</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 stretch-card transparent">
+                                <div class="card card-light-danger">
+                                    <div class="card-body">
+                                        <p class="mb-4">Data uji</p>
+                                        <p class="fs-30 mb-2">47033</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-center">
+                        <div style="width: 250px;">
+                            <canvas id="myChart"></canvas>
+                        </div>
+                        <div class="row flex-column">
+                            <h4>Grafik Distribusi Label:</h4>
+                            <p>Positif : {{jumlah_positif}}</p>
+                            <p>Negatif : {{jumlah_negatif}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+<script>
+    // Ambil data dari Flask (Jinja2 Template)
+    const jumlah_positif = "{{ jumlah_positif}}";
+    const jumlah_negatif = "{{ jumlah_negatif}}";
+
+
+    const data = {
+        labels: [
+            'Positif',
+            'Negatif'
+        ],
+        datasets: [{
+            label: 'Sentimen',
+            data: [jumlah_positif, jumlah_negatif],
+            backgroundColor: [
+                'rgb(87, 143, 202)',
+                'rgb(73, 61, 158)',
+            ],
+            hoverOffset: 4
+        }]
+    };
+    const config = {
+        type: 'pie',
+        data: data,
+    };
+    var myChart = new Chart(
+        document.getElementById('myChart'),
+        config
+    )
+</script>
 {% endblock %}
+{% block js %}
+
+{% endblock%}
