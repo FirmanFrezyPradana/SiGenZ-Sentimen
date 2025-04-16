@@ -5,6 +5,7 @@ from routes.dataSentimen import dataSentimen_bp
 from routes.dataTraining import dataTraining_bp
 from routes.preprocessing import preprocessing_bp
 from routes.importData import import_bp
+from routes.pembobotan import pembobotan_bp
 from db_config import connect_db
 
 app = Flask(__name__)
@@ -16,6 +17,7 @@ app.register_blueprint(dataSentimen_bp)
 app.register_blueprint(dataTraining_bp)
 app.register_blueprint(preprocessing_bp)
 app.register_blueprint(import_bp)
+app.register_blueprint(pembobotan_bp)
 
 @app.route('/')
 def index():
