@@ -1,0 +1,126 @@
+{% extends "base.html" %} {% block title %}Sample{% endblock %}
+{% block content %}
+<div class="col-md-12 grid-margin">
+    <div class="row">
+        <div class="card-body">
+            <h3 class="font-weight-bold">Feature Extraction</h3>
+            <h6 class="font-weight-normal mb-0">Seluruh data pada proses ini akan diberikan bobot mengunakan metode
+                TF-IDF:</h6>
+        </div>
+
+        <!-- Menampilkan pesan flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alert-container">
+            {% for category, message in messages %}
+            <div id="message" class="alert
+                            {% if category == 'success' %}alert-success{% elif category == 'error' %}alert-danger{% endif %}
+                            alert-dismissible fade show" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="card col-md-12">
+            <div class="card-body">
+                <div class="d-flex justify-content-end ">
+                    <form action="{{ url_for('pembobotan.proses_tfidf') }}" method="post">
+                        <button type="submit" class="btn btn-primary ml-3">
+                            <i class="ti-ruler-alt"></i>
+                            Proses TF-IDF
+                        </button>
+                    </form>
+
+                    <!-- Button trigger modal -->
+                    <button type="button" class="btn btn-primary ml-3" data-toggle="modal"
+                        data-target="#preprocessingModal">
+                        <i class="ti-arrows-corner"></i>
+                        Split data
+                    </button>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="preprocessingModal" tabindex="-1"
+                        aria-labelledby="preprocessingModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="preprocessingModalLabel">
+                                    </h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+
+                                <div class="modal-body">
+                                    <div class="alert alert-danger" role="alert">
+                                        Menghapus data akan menghapus seluruh data training dan data testing.
+                                    </div>
+                                    Apakah kamu yakin akan menghapus semua data?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
+                                    <form action="{{ url_for('dataSentimen.delete_all_data') }}" method="POST">
+                                        <button type="submit" class="btn btn-danger">Ya, Hapus!</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-body ">
+                <div class="table-responsive">
+                    <table id="table" class="table table-striped table-bordered ">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Text preprocessing</th>
+                                <th>Labels</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if data %}
+                            {% for row in data %}
+                            <tr>
+                                <td class="text-center">{{ loop.index }}</td>
+                                <td class="text-wrap">{{ row[1] }}</td>
+                                <td class="text-center">{{ row[2] }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No data available(anda perlu menjalankan proses
+                                    tf-idf)</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th>No</th>
+                                <th>Text preprocessing</th>
+                                <th>Labels</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='vendors/datatables/jquery.dataTables.min.js')}}"></script>
+<script src="{{ url_for('static', filename='vendors/datatables/dataTables.bootstrap4.min.js')}}"></script>
+<script>
+
+    new DataTable('#table');
+    $(function () {
+        setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
+    });
+
+</script>
+{% endblock %}

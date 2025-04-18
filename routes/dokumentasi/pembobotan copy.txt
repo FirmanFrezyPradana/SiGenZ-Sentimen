@@ -1,0 +1,193 @@
+import pandas as pd
+import numpy as np
+import math
+from flask import Blueprint, request, jsonify, redirect, url_for, render_template, flash
+from db_config import connect_db
+import json
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+pembobotan_bp = Blueprint('pembobotan', __name__)
+
+@pembobotan_bp.route('/pembobotan')
+def page_preprocessing():
+    # percobaan
+    connection = connect_db()
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT preprocessing_text FROM preprocessing")
+        data = cursor.fetchall()
+    connection.close()
+
+    df = pd.DataFrame(data, columns=['preprocessing_text'])
+    documents = df['preprocessing_text'].tolist()
+
+    tf = compute_tf(documents)
+    idf = compute_idf(documents)
+    tfidf_df = compute_tfidf(documents)
+    df_term = get_doc_frequency(documents)
+
+    X = tfidf_df.to_numpy()
+
+    # Konversi semua ke bentuk JSON-able
+    tf_json = [{word: round(score, 4) for word, score in doc.items()} for doc in tf]
+    idf_json = {word: round(score, 4) for word, score in idf.items()}
+    tfidf_json = tfidf_df.round(4).to_dict(orient='records')
+
+    return jsonify({
+        'TF': tf_json,
+        'IDF': idf_json,
+        'TF-IDF': tfidf_json,
+        # 'MATRIX': X.tolist(),
+        # 'tf_all':df_term
+    })
+    # end percobaan
+
+    # # source code memasukkan ke database
+    # # start database
+    # connection = connect_db()
+    # try:
+    #     with connection.cursor() as cursor:
+    #         # Ambil data teks dan label dari tabel preprocessing
+    #         cursor.execute("SELECT preprocessing_text, labels FROM preprocessing")
+    #         data = cursor.fetchall()
+
+    #     # Pisahkan teks dan label
+    #     df = pd.DataFrame(data, columns=['preprocessing_text', 'labels'])
+    #     documents = df['preprocessing_text'].tolist()
+    #     labels = df['labels'].tolist()
+
+    #     # Hitung TF, IDF, TF-IDF
+    #     tf = compute_tf(documents)
+    #     idf = compute_idf(documents)
+    #     tfidf_df = compute_tfidf(documents)
+
+    #     X = tfidf_df.to_numpy()
+
+    #     # Simpan hasil ke dalam tabel data_tfidf
+    #     with connection.cursor() as cursor:
+    #         for i in range(len(documents)):
+    #             preprocessing_text = documents[i]
+    #             label = labels[i]
+    #             tfidf_vector = X[i].tolist()  # ambil vektor TF-IDF
+    #             tfidf_json = ",".join([str(round(val, 6)) for val in tfidf_vector])  # ubah ke format "[0.324234,0.0,..]" menjadi "0.324234,0.0,.."
+
+    #              # Cek apakah terdapat duplikasi pada tabel
+    #             cursor.execute("SELECT COUNT(*) FROM data_tfidf WHERE preprocessing_text = %s", (preprocessing_text,))
+    #             exists = cursor.fetchone()[0]
+
+    #             if exists == 0:
+    #                 cursor.execute("""
+    #                     INSERT INTO data_tfidf (preprocessing_text, labels, tfidf)
+    #                     VALUES (%s, %s, %s)
+    #                 """, (preprocessing_text, label, tfidf_json))
+
+    #     connection.commit()
+
+    #     return "succses"
+
+    # except Exception as error:
+    #     connection.rollback()
+    #     flash(f"Terjadi kesalahan: {error}", "danger")
+    #     # return redirect(url_for('preprocessing.page_preprocessing'))
+    #     return jsonify({'error': str(error)})
+
+    # finally:
+    #     connection.close()
+
+    # # end database
+
+##percobaan
+from collections import defaultdict
+def compute_tf(documents):
+    ### dengan normalisasi
+    # tf_list = []
+    # for doc in documents:
+    #     tf_counts = defaultdict(int)
+    #     words = doc.split()
+    #     total_words = len(words)
+
+    #     for word in words:
+    #         tf_counts[word] += 1
+
+    #     tf_normalized = {word: count / total_words for word, count in tf_counts.items()} if total_words > 0 else {}
+    #     tf_list.append(tf_normalized)
+
+    # return tf_list
+
+    ##tanpa normalisasi
+    # tf_list = []
+    # for doc in documents:
+    #     tf_counts = defaultdict(int)
+    #     words = doc.split()
+    #     for word in words:
+    #         tf_counts[word] += 1
+    #     tf_list.append(dict(tf_counts))  # tidak dinormalisasi
+    # return tf_list
+
+    # tf = []
+    # for doc in documents:
+    #     words = doc.split()
+    #     word_count = len(words)
+    #     tf_dict = {}
+    #     for word in words:
+    #         tf_dict[word] = tf_dict.get(word, 0) + 1 / word_count
+    #     tf.append(tf_dict)
+    # return tf
+
+    ## sama seperti jurnal
+    tf_list = []
+    for doc in documents:
+        tf_counts = defaultdict(int)
+        words = doc.split()
+
+        for word in words:
+            tf_counts[word] += 1
+
+        tf_log_scaled = {
+            word: round(1 + math.log10(count), 4)
+            for word, count in tf_counts.items()
+        }
+
+        tf_list.append(tf_log_scaled)
+    return tf_list
+
+
+
+def compute_idf(documents):
+
+    idf = {}
+    total_docs = len(documents)
+    word_set = set(word for doc in documents for word in doc.split())
+    for word in word_set:
+        doc_count = sum(1 for doc in documents if word in doc.split())
+        # Menghindari log(0) dengan pengecekan
+        # idf[word] = math.log10(total_docs / (doc_count + 1))  # Menambahkan 1 untuk menghindari pembagian dengan 0
+        ## menual
+        idf[word] = math.log10(total_docs / doc_count)
+    return idf
+
+def compute_tfidf(documents):
+    tf = compute_tf(documents)
+    idf = compute_idf(documents)
+
+    tfidf_list = []
+    for doc_tf in tf:
+        tfidf_doc = {word: tf_value * idf.get(word, 0) for word, tf_value in doc_tf.items()}
+        tfidf_list.append(tfidf_doc)
+
+    # Konversi ke DataFrame dan isi nilai NaN dengan 0
+    tfidf_df = pd.DataFrame(tfidf_list).fillna(0)
+    return tfidf_df
+
+
+# melihat banyak term seluruh dokumen contoh : budak = d1 & d4 = 2
+from collections import defaultdict
+def get_doc_frequency(documents):
+    df_counts = defaultdict(int)
+    word_set = set(word for doc in documents for word in doc.split())
+    for word in word_set:
+        for doc in documents:
+            if word in doc.split():
+                df_counts[word] += 1
+    return df_counts
+
+# end percobaan

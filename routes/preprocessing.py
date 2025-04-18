@@ -134,8 +134,6 @@ def stopword_removal(text):
             "tujuh", "tunggu", "tunggu-tunggu", "tungguin", "tungguinlah", "untuk", "untuknya", "usai", "usah", "yaitu",
             "yakin", "yakinkah", "yakinkan", "mu","nya","an","bang",
         ]
-
-
         stop_words = factory.get_stop_words() + more_stopword
         return [word for word in text if word not in stop_words]
 
