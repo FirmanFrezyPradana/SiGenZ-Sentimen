@@ -53,8 +53,10 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
-                                    <form action="{{ url_for('pembobotan.proses_tfidf') }}" method="POST">
-                                        <button type="submit" class="btn btn-danger">Ya!</button>
+                                    <form action="{{ url_for('pembobotan.proses_tfidf')}}?status=preprocess_success"
+                                        method="POST" id="preprocessingForm">
+                                        <button type="submit" class="btn btn-danger"
+                                            id="preprocessingButton">Ya!</button>
                                     </form>
                                 </div>
                             </div>
@@ -102,6 +104,15 @@
         </div>
     </div>
 </div>
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:none;">
+    <div class="overlay-content">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <p>Processing, Proses membutuhkan waktu mohon tunggu sebentar...</p>
+    </div>
+</div>
 {% endblock %}
 
 {% block js %}
@@ -109,11 +120,36 @@
 <script src="{{ url_for('static', filename='vendors/datatables/jquery.dataTables.min.js')}}"></script>
 <script src="{{ url_for('static', filename='vendors/datatables/dataTables.bootstrap4.min.js')}}"></script>
 <script>
-
     new DataTable('#table');
-    $(function () {
-        setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
-    });
 
+    // Cek apakah ada parameter `status` di URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+
+    // Tampilkan Sweet Alert berdasarkan status preprocess
+    if (status === 'preprocess_success') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Pre-processing berhasil dilakukan!',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+
+    // Fungsi untuk menampilkan loading overlay
+    document.getElementById("preprocessingForm").onsubmit = function () {
+        const button = document.getElementById("preprocessingButton");
+        button.disabled = true;
+        button.innerHTML = "Sedang Memproses...";
+
+        // Menampilkan overlay loading
+        document.getElementById("loadingOverlay").style.display = "block";
+        document.getElementById('preprocessingModal').alert('close');
+    };
+
+    // Menutup pesan alert setelah 4 detik
+    $(function () {
+        setTimeout(() => $("#message").alert('close'), 4000); // 4 detik
+    });
 </script>
 {% endblock %}

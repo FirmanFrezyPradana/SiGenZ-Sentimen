@@ -67,7 +67,7 @@ def proses_tfidf():
 
         connection.commit()
         flash('Data berhasil ditambahkan!', 'success')
-        return redirect(url_for('pembobotan.page_tfidf'))
+        return redirect(url_for('pembobotan.page_tfidf', status='preprocess_success'))
 
     except Exception as error:
         connection.rollback()
