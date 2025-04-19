@@ -25,18 +25,11 @@
         <div class="card col-md-12">
             <div class="card-body">
                 <div class="d-flex justify-content-end ">
-                    <form action="{{ url_for('pembobotan.proses_tfidf') }}" method="post">
-                        <button type="submit" class="btn btn-primary ml-3">
-                            <i class="ti-ruler-alt"></i>
-                            Proses TF-IDF
-                        </button>
-                    </form>
-
                     <!-- Button trigger modal -->
                     <button type="button" class="btn btn-primary ml-3" data-toggle="modal"
                         data-target="#preprocessingModal">
-                        <i class="ti-arrows-corner"></i>
-                        Split data
+                        <i class="ti-ruler-alt"></i>
+                        Proses TF-IDF
                     </button>
 
                     <!-- Modal -->
@@ -56,12 +49,12 @@
                                     <div class="alert alert-danger" role="alert">
                                         Menghapus data akan menghapus seluruh data training dan data testing.
                                     </div>
-                                    Apakah kamu yakin akan menghapus semua data?
+                                    Apakah kamu yakin?
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
-                                    <form action="{{ url_for('dataSentimen.delete_all_data') }}" method="POST">
-                                        <button type="submit" class="btn btn-danger">Ya, Hapus!</button>
+                                    <form action="{{ url_for('pembobotan.proses_tfidf') }}" method="POST">
+                                        <button type="submit" class="btn btn-danger">Ya!</button>
                                     </form>
                                 </div>
                             </div>
