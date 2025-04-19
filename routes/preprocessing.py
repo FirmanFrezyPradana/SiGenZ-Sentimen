@@ -46,7 +46,16 @@ def case_folding(text):
     return text.lower()
 
 def tokenizing(text):
-    return word_tokenize(text)
+    tokens = word_tokenize(text)
+    # Gabungkan 'gen' + 'z' menjadi 'genz'= karena kata tersebut sering muncul
+    i = 0
+    while i < len(tokens) - 1:
+        if tokens[i] == 'gen' and tokens[i + 1] == 'z':
+            tokens[i] = 'genz'         # Gabungkan menjadi 'genz'
+            del tokens[i + 1]          # Hapus 'z'
+        else:
+            i += 1
+    return tokens
 
 normalisasi_kata_df = pd.read_csv('static/kamus/normalisasi-new.csv')
 normalisasi_kata_dict = dict(zip(normalisasi_kata_df['before'], normalisasi_kata_df['after']))
@@ -60,17 +69,22 @@ def stopword_removal(text):
     try:
         factory = StopWordRemoverFactory()
         stopword = factory.get_stop_words()
+        # kecualikan
+        custom_stopwords = list(filter(lambda x: x != 'tidak', stopword))
         more_stopword = [
-            "a", "ak", "abc", "acc", "acoe", "ah", "bola", "bla", "uec", "beuh", "ayo", "bu", "b", "acom", "hahahahha","dekkkk","pol","gemezzz",
+            "a", "ak", "abc", "acc", "acoe", "ah", "bola", "bla", "uec", "beuh", "ayo", "bu", "b", "acom", "hahahahha","dekkkk","pol","gemezzz","bang",
             "ada", "adu", "oe", "aldo", "akh", "aka", "aki", "all", "dmi", "enji", "khao", "urgh", "haha", "wkwkwkwkwkwk", "hhhhhhhhh","dekkkkkkkk",
             "cam", "ae", "alert", "afer", "agreed", "aides", "akn", "alur", "do", "eq", "fittest", "ishhh", "eh", "het", "wah","x","kan","ku","nih",
             "cahol", "aegyo", "aer", "ajer", "ai", "aids", "ala", "am", "dok", "etc", "anaoisanya", "wkwk", "aowkaowk", "uh", "ai","main fan fiction",
             "c", "camp", "can", "carats", "cc", "cek", "cekadak", "dik", "dong", "hoho", "euy", "ohhh", "amp", "ohhhhh", "amp","an","aaja","brooooo gas oke gas in",
-            "centris", "centu", "ceo", "ckckck", "cot", "core", "deri", "dl", "duh", "belva", "wooooww", "ozaaaa", "wah", "isee",
-            "cuba", "cuihh", "da", "dah", "bim", "deh", "diding", "dlk", "e", "quot", "ber", "uuhhh", "laaaaaaaaaaaaaaaaaaah",
-            "cucuk", "cuy", "daei", "dahh", "dangg", "dek", "dih", "dm", "eh", "beibeh", "huuaaaaa", "hmmm", "wkwkwkwkwkwkw","amp","sih","nya","aku", "tahun","jam","pagi","coba","waktu","namanya","mulai","sore","anak","orang","kayak","intinya","semua"
+            "centris", "centu", "ceo", "ckckck", "cot", "core", "deri", "dl", "duh", "belva", "wooooww", "ozaaaa", "wah", "isee","lurr","lah","sana","sini",
+            "cuba", "cuihh", "da", "dah", "bim", "deh", "diding", "dlk", "e", "quot", "ber", "uuhhh", "laaaaaaaaaaaaaaaaaaah","bro","nak","ya","for","your","guys",
+            "cucuk", "cuy", "daei", "dahh", "dangg", "dek", "dih", "dm", "eh", "beibeh", "huuaaaaa", "hmmm", "wkwkwkwkwkwkw","amp","sih","nya","aku",
+            "tahun","jam","pagi","coba","waktu","namanya","mulai","sore","anak","orang","kayak","intinya","semua","xixi","pov","iya","to","olga"
         ]
-        stop_words = factory.get_stop_words() + more_stopword
+
+        stop_words = custom_stopwords + more_stopword
+        # stop_words = more_stopword
         return [word for word in text if word not in stop_words]
 
     except Exception as e:
