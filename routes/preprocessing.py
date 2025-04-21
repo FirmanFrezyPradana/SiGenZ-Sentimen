@@ -20,7 +20,7 @@ def page_preprocessing():
         cursor = connection.cursor()
         cursor.execute("SELECT teks,labels, cleaned_text, lower_text,tokenized_text,normalized_text,stopword_text,preprocessing_text FROM preprocessing")
         data = cursor.fetchall()
-        return render_template('pre_processing.html',data=data)
+        return render_template('preprocessing.html',data=data)
     except Exception as e:
         flash(f'Terjadi kesalahan: {str(e)}', 'error')
         return redirect(url_for('preprocessing.page_preprocessing'))
