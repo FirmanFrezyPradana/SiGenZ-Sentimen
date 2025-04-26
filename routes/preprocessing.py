@@ -18,7 +18,7 @@ def page_preprocessing():
         return redirect(url_for('preprocessing.page_preprocessing'))
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT teks,labels, cleaned_text, lower_text,tokenized_text,normalized_text,stopword_text,preprocessing_text FROM preprocessing")
+        cursor.execute("SELECT * FROM preprocessing")
         data = cursor.fetchall()
         return render_template('preprocessing.html',data=data)
     except Exception as e:
@@ -52,13 +52,10 @@ def preprocessing_data():
             cursor.execute("TRUNCATE TABLE preprocessing")
             cursor.executemany(
                 """
-                INSERT INTO preprocessing (teks,labels, cleaned_text, lower_text, tokenized_text, normalized_text, stopword_text, preprocessing_text)
-                VALUES (%s,%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO preprocessing (teks, labels, preprocessing_text)
+                VALUES (%s, %s, %s)
                 """,
-                [(row["teks"],row["labels"], row["cleaning_text"], row["lower_text"],
-                  ' '.join(row["tokenized_text"]), ' '.join(row["normalized_text"]),
-                  ' '.join(row["stopword_text"]), ' '.join(row["lemmatized_text"]))
-                 for _, row in df.iterrows()]
+                df[['teks', 'labels', 'preprocessing_text']].values.tolist()
             )
 
             # Hapus duplikat dalam tabel preprocessing

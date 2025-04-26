@@ -93,7 +93,8 @@ def preprocess_texts(teks, labels):
         df['tokenized_text'] = df['lower_text'].apply(tokenizing)
         df['normalized_text'] = df['tokenized_text'].apply(normalisasi)
         df['stopword_text'] = df['normalized_text'].apply(stopword_removal)
-        df['lemmatized_text'] = df['stopword_text'].apply(stemmed)
+        df['hasil_text'] = df['stopword_text'].apply(stemmed)
+        df['preprocessing_text'] = df['hasil_text'].apply(lambda x: ' '.join(x) if isinstance(x, list) else x)
         return df
     except Exception as e:
         flash(f"terjadi kesalahan saat preprocessing data: {e}", "danger")
