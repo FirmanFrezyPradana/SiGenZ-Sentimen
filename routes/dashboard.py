@@ -16,6 +16,14 @@ def dashboard():
             cursor.execute("SELECT COUNT(*) FROM data_sentimen")
             jumlah_total = cursor.fetchone()[0]
 
+             # Jumlah data sentimen positif
+            cursor.execute("SELECT COUNT(*) FROM data_training ")
+            jumlah_latih = cursor.fetchone()[0] or 0
+
+            # Jumlah data sentimen negatif
+            cursor.execute("SELECT COUNT(*) FROM data_testing ")
+            jumlah_uji = cursor.fetchone()[0] or 0
+
             # Jumlah data sentimen positif
             cursor.execute("SELECT COUNT(*) FROM data_sentimen WHERE labels = 'positif'")
             jumlah_positif = cursor.fetchone()[0] or 0
@@ -28,7 +36,7 @@ def dashboard():
         flash(f'Error saat mengambil data: {str(e)}', 'error')
         jumlah_total = 0
 
-    return render_template("dashboard.html", jumlah_total=jumlah_total,jumlah_positif=jumlah_positif,jumlah_negatif=jumlah_negatif)
+    return render_template("dashboard.html", jumlah_latih=jumlah_latih,jumlah_uji=jumlah_uji,jumlah_total=jumlah_total,jumlah_positif=jumlah_positif,jumlah_negatif=jumlah_negatif)
 
 
 
