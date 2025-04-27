@@ -37,17 +37,10 @@
                         aria-labelledby="preprocessingModalLabel" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="preprocessingModalLabel">
-                                    </h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-
                                 <div class="modal-body">
                                     <div class="alert alert-danger" role="alert">
-                                        Menghapus data akan menghapus seluruh data training dan data testing.
+                                        Pembobotan membutuhkan waktu dalam proses pembobotan, Memproses TF-IDF akan
+                                        sekaligus membagi data ke dalam database menjadi data train dan data testing.
                                     </div>
                                     Apakah kamu yakin?
                                 </div>
@@ -62,7 +55,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
             <div class="card-body ">
@@ -80,8 +72,8 @@
                             {% for row in data %}
                             <tr>
                                 <td class="text-center">{{ loop.index }}</td>
-                                <td class="text-wrap">{{ row[1] }}</td>
-                                <td class="text-center">{{ row[2] }}</td>
+                                <td class="text-wrap">{{ row[2] }}</td>
+                                <td class="text-center">{{ row[3] }}</td>
                             </tr>
                             {% endfor %}
                             {% else %}
@@ -134,6 +126,13 @@
             showConfirmButton: false,
             timer: 2000
         });
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Upload dataset gagal dilakukan!',
+            showConfirmButton: false,
+            timer: 2000
+        });
     }
 
     // Fungsi untuk menampilkan loading overlay
@@ -141,10 +140,8 @@
         const button = document.getElementById("preprocessingButton");
         button.disabled = true;
         button.innerHTML = "Sedang Memproses...";
-
         // Menampilkan overlay loading
         document.getElementById("loadingOverlay").style.display = "block";
-        document.getElementById('preprocessingModal').alert('close');
     };
 
     // Menutup pesan alert setelah 4 detik

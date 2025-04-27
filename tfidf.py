@@ -45,3 +45,19 @@ def compute_tfidf(documents):
     # Konversi ke DataFrame dan isi nilai NaN dengan 0
     tfidf_df = pd.DataFrame(tfidf_list).fillna(0)
     return tfidf_df
+
+
+# # menggunakan library
+# from sklearn.feature_extraction.text import TfidfVectorizer
+# import pandas as pd
+# def compute_tfidf(documents):
+#     vectorizer = TfidfVectorizer()
+#     tfidf_matrix = vectorizer.fit_transform(documents)
+
+#     # Konversi hasilnya ke DataFrame
+#     df_tfidf = pd.DataFrame(
+#         tfidf_matrix.toarray(),
+#         columns=vectorizer.get_feature_names_out()
+#     )
+
+#     return df_tfidf
