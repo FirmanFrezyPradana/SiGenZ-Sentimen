@@ -3,7 +3,7 @@ from db_config import connect_db
 
 dataTraining_bp = Blueprint('dataTraining', __name__)
 
-@dataTraining_bp.route('/preDataTraining',methods=['GET'])
+@dataTraining_bp.route('/hal_DataTraining',methods=['GET'])
 def dataTraining():
     connection = connect_db()
     if not connection:
@@ -12,9 +12,9 @@ def dataTraining():
 
     try:
         cursor = connection.cursor()
-        cursor.execute("SELECT teks, sosmed, labels FROM data_sentimen")
+        cursor.execute("SELECT * FROM data_training")
         data = cursor.fetchall()
-        return render_template('pre_data_train.html', data=data)
+        return render_template('data_training.html', data=data)
 
     except Exception as e:
         flash(f'Terjadi kesalahan: {str(e)}', 'error')
