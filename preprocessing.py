@@ -103,7 +103,7 @@ def stopword_removal(text):
             "jangankan", "janganlah", "jauh", "jawab", "jawaban", "jawabnya", "jelas", "jelaskan", "jelaslah",
             "jelasnya", "jika", "jikalau", "juga", "jumlah", "jumlahnya", "justru", "kala", "kalau", "kalaulah",
             "kalaupun", "kalian", "kami", "kamilah", "kamu", "kamulah", "kan", "kapan", "kapankah", "kapanpun"
-            "meminta", "memintakan", "memisalkan", "memperbuat","tahun"
+            "meminta", "memintakan", "memisalkan", "memperbuat","tahun","kok","mau","koh","okey"
         ]
 
         stop_words = custom_stopwords + more_stopword

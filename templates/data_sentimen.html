@@ -82,7 +82,8 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
-                                    <form action="{{ url_for('dataSentimen.delete_all_data') }}" method="POST">
+                                    <form action="{{ url_for('dataSentimen.delete_all_data') }}" method="POST"
+                                        id="uploadForm">
                                         <button type="submit" class="btn btn-danger">Ya, Hapus!</button>
                                     </form>
                                 </div>
@@ -108,9 +109,9 @@
                             {% for row in data %}
                             <tr>
                                 <td class="text-center">{{ loop.index }}</td>
-                                <td class="text-wrap">{{ row[0] }}</td>
-                                <td class="text-center">{{ row[1] }}</td>
-                                <td class="text-center">{{ row[2] }}</td>
+                                <td class="text-wrap">{{ row.teks }}</td>
+                                <td class="text-center">{{ row.sosmed }}</td>
+                                <td class="text-center">{{ row.labels }}</td>
                             </tr>
                             {% endfor %}
                             {% else %}
@@ -142,6 +143,36 @@
 <script>
 
     new DataTable('#table');
+    // Cek apakah ada parameter `status` di URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+
+    // Tampilkan Sweet Alert berdasarkan status preprocess
+    if (status === 'Upload_success') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Upload dataset berhasil dilakukan!',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Upload dataset berhasil gagal!',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }
+
+    // Fungsi untuk menampilkan loading overlay
+    document.getElementById("uploadForm").onsubmit = function () {
+        const button = document.getElementById("uploadButton");
+        button.disabled = true;
+        button.innerHTML = "Sedang Memproses...";
+        // Menampilkan overlay loading
+        document.getElementById("loadingOverlay").style.display = "block";
+    };
+
     $(function () {
         setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
     });

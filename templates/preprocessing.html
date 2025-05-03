@@ -44,8 +44,8 @@
                                 {% for row in data %}
                                 <tr>
                                     <td class="text-center">{{ loop.index }}</td>
-                                    <td class="text-wrap">{{ row[1] }}</td>
-                                    <td class="text-wrap">{{ row[3]}}</td>
+                                    <td class="text-wrap">{{ row.teks }}</td>
+                                    <td class="text-wrap">{{ row.preprocessing_text}}</td>
                                 </tr>
                                 {% endfor %}
                                 {% else %}
