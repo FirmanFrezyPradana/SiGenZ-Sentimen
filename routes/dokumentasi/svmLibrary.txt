@@ -1,0 +1,351 @@
+from flask import Blueprint, request, jsonify,redirect, url_for,render_template, flash
+from db_config import db
+from models import DataTFIDF,Preprocessing
+import numpy as np
+import pickle
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+implementasiSvm_bp = Blueprint('implementasiSvm', __name__)
+
+@implementasiSvm_bp.route('/implementasiSvm',methods=['GET','POST'])
+def implementasiSvm():
+    try:
+        # Ambil data dari tabel data_tfidf
+        preprocessingData = Preprocessing.query.all()
+
+        teks = [item.teks for item in preprocessingData]
+        corpus = [item.preprocessing_text for item in preprocessingData]
+        label = [item.labels for item in preprocessingData]
+
+        label = [1 if label == 'Positif' else -1 for label in label]
+
+        tfidf_vectorizer = TfidfVectorizer()
+        tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
+
+        with open('tfidf_vectorizer.pkl', 'wb') as tfidf_vectorizer_file:
+            pickle.dump(tfidf_vectorizer, tfidf_vectorizer_file)
+
+        # Split the resampled data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, label, test_size=0.2, random_state=0)
+
+        # Train the SVM model on the resampled data
+
+        linear = SVC(kernel="linear", C=1.0, random_state=0)
+        model = linear.fit(X_train, y_train)
+
+        # Menyimpan model SVM linear ke dalam file
+        with open('svm_linear_model.pkl', 'wb') as model_file:
+            pickle.dump(model, model_file)
+
+        # Memuat kembali model yang telah disimpan
+        with open('svm_linear_model.pkl', 'rb') as model_file:
+            loaded_linear_model = pickle.load(model_file)
+
+        # y_pred = loaded_linear_model.predict(X_test)
+
+        # # Menghitung metrik evaluasi
+        # accuracy = accuracy_score(y_test, y_pred)
+        # precision = precision_score(y_test, y_pred, average='weighted', zero_division=1)
+        # recall = recall_score(y_test, y_pred, average='weighted', zero_division=1)
+
+        # buka file tfidf vectorizer
+        with open('tfidf_vectorizer.pkl', 'rb') as tfidf_vectorizer_file:
+            loaded_tfidf_vectorizer = pickle.load(tfidf_vectorizer_file)
+
+        # Transform the training data using the loaded TF-IDF vectorizer
+        X_train_transformed = loaded_tfidf_vectorizer.transform(corpus)
+
+        # Predict on the training data using the loaded SVM model
+        hasil_linear_train = loaded_linear_model.predict(X_train_transformed)
+
+        # count true positive, true negative, false positive, false negative
+        tp = 0
+        tn = 0
+        fp = 0
+        fn = 0
+        data = []
+        for i in range(len(label)):
+            if label[i] == -1 and hasil_linear_train[i] == -1:  # true negative
+                tn += 1
+            elif label[i] == 1 and hasil_linear_train[i] == 1:  # true positive
+                tp += 1
+            elif label[i] == -1 and hasil_linear_train[i] == 1:  # false positive
+                fp += 1
+            elif label[i] == 1 and hasil_linear_train[i] == -1:  # false negative
+                fn += 1
+            data.append({
+                'teks': teks[i],
+                'label': "Negatif" if label[i] == -1 else "Positif",
+                'hasil': "Negatif" if hasil_linear_train[i] == -1 else "Positif",
+            })
+        print(f'True Positive (TP): {tp}')
+        print(f'True Negative (TN): {tn}')
+        print(f'False Positive (FP): {fp}')
+        print(f'False Negative (FN): {fn}')
+        print(len(label))
+
+        # Menghitung metrik evaluasi
+        accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+        return jsonify({
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+        })
+
+    except Exception as error:
+        flash(f"Terjadi kesalahan saat pelatihan SVM: {str(error)}", "danger")
+        return render_template('implementasi_svm.html', accuracy=None, precision=None, recall=None)
+
+
+
+       ============================= uji coba hasil R = 75%, R = 9,38 , ac = ==================================
+
+try:
+        # Ambil data dari tabel preprocessing
+        preprocessingData = Preprocessing.query.all()
+
+        # Ambil teks asli dan hasil preprocessing
+        teks = [item.teks for item in preprocessingData]
+        corpus = [item.preprocessing_text for item in preprocessingData]
+        label = [1 if item.labels.lower() == 'positif' else -1 for item in preprocessingData]
+
+        # Bagi data menjadi training dan testing (termasuk teks asli)
+        teks_train, teks_test, corpus_train, corpus_test, y_train, y_test = train_test_split(
+            teks, corpus, label, test_size=0.2, random_state=0
+        )
+
+        # TF-IDF hanya fit pada data training
+        tfidf_vectorizer = TfidfVectorizer()
+        X_train = tfidf_vectorizer.fit_transform(corpus_train)
+        X_test = tfidf_vectorizer.transform(corpus_test)
+
+        # Simpan TF-IDF vectorizer
+        with open('tfidf_vectorizer.pkl', 'wb') as tfidf_vectorizer_file:
+            pickle.dump(tfidf_vectorizer, tfidf_vectorizer_file)
+
+        # Melatih model SVM linear
+        linear = SVC(kernel="linear", C=1.0, random_state=0)
+        model = linear.fit(X_train, y_train)
+
+        # Simpan model
+        with open('svm_linear_model.pkl', 'wb') as model_file:
+            pickle.dump(model, model_file)
+
+        # Prediksi pada data testing
+        y_pred = model.predict(X_test)
+
+        # Hitung metrik evaluasi
+        tp = sum((y_test[i] == 1) and (y_pred[i] == 1) for i in range(len(y_test)))
+        tn = sum((y_test[i] == -1) and (y_pred[i] == -1) for i in range(len(y_test)))
+        fp = sum((y_test[i] == -1) and (y_pred[i] == 1) for i in range(len(y_test)))
+        fn = sum((y_test[i] == 1) and (y_pred[i] == -1) for i in range(len(y_test)))
+
+        data = []
+        for i in range(len(y_test)):
+            data.append({
+                'teks': teks_test[i],
+                'label': "Negatif" if y_test[i] == -1 else "Positif",
+                'hasil': "Negatif" if y_pred[i] == -1 else "Positif",
+            })
+
+        accuracy = round((tp + tn) / (tp + tn + fp + fn), 4) if (tp + tn + fp + fn) > 0 else 0
+        precision = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0
+        recall = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0
+
+        # Calculate evaluation metrics
+        # accuracy = round(accuracy_score(y_test, y_pred) * 100, 2)
+        # precision = round(precision_score(y_test, y_pred, average='weighted', zero_division=1) * 100, 2)
+        # recall = round(recall_score(y_test, y_pred, average='weighted', zero_division=1) * 100, 2)
+
+        return jsonify({
+            'accuracy': f"{round(float(accuracy) * 100, 2)}%",
+            'precision': f"{round(float(precision) * 100, 2)}%",
+            'recall': f"{round(float(recall) * 100, 2)}%",
+        #    'accuracy': f"{round(float(accuracy), 2)}%",
+        #     'precision': f"{round(float(precision), 2)}%",
+        #     'recall': f"{round(float(recall), 2)}%",
+            'true_positive': int(tp),
+            'true_negative': int(tn),
+            'false_positive': int(fp),
+            'false_negative': int(fn),
+            'jumlah_data': int(len(y_test)),
+
+            # 'data_klasifikasi': data
+        })
+
+    except Exception as error:
+        flash(f"Terjadi kesalahan saat pelatihan SVM: {str(error)}", "danger")
+        return error
+
+
+========================================================================================
+# try:
+    #     # Ambil data dari tabel preprocessing
+    #     preprocessingData = Preprocessing.query.all()
+
+    #     # Ambil teks asli dan hasil preprocessing
+    #     teks = [item.teks for item in preprocessingData]
+    #     corpus = [item.preprocessing_text for item in preprocessingData]
+    #     label = [1 if item.labels.lower() == 'positif' else -1 for item in preprocessingData]
+
+    #     # Bagi data menjadi training dan testing (termasuk teks asli)
+    #     teks_train, teks_test, corpus_train, corpus_test, y_train, y_test = train_test_split(
+    #         teks, corpus, label, test_size=0.2, random_state=0
+    #     )
+
+    #     # TF-IDF hanya fit pada data training
+    #     tfidf_vectorizer = TfidfVectorizer()
+    #     X_train = tfidf_vectorizer.fit_transform(corpus_train)
+    #     X_test = tfidf_vectorizer.transform(corpus_test)
+
+    #     # Simpan TF-IDF vectorizer
+    #     with open('tfidf_vectorizer.pkl', 'wb') as tfidf_vectorizer_file:
+    #         pickle.dump(tfidf_vectorizer, tfidf_vectorizer_file)
+
+    #     # Melatih model SVM linear
+    #     linear = SVC(kernel="linear", C=1.0, random_state=0)
+    #     model = linear.fit(X_train, y_train)
+
+    #     # Simpan model
+    #     with open('svm_linear_model.pkl', 'wb') as model_file:
+    #         pickle.dump(model, model_file)
+
+    #     # Prediksi pada data testing
+    #     y_pred = model.predict(X_test)
+
+    #     # Hitung metrik evaluasi
+    #     tp = sum((y_test[i] == 1) and (y_pred[i] == 1) for i in range(len(y_test)))
+    #     tn = sum((y_test[i] == -1) and (y_pred[i] == -1) for i in range(len(y_test)))
+    #     fp = sum((y_test[i] == -1) and (y_pred[i] == 1) for i in range(len(y_test)))
+    #     fn = sum((y_test[i] == 1) and (y_pred[i] == -1) for i in range(len(y_test)))
+
+    #     data = []
+    #     for i in range(len(y_test)):
+    #         data.append({
+    #             'teks': teks_test[i],
+    #             'label': "Negatif" if y_test[i] == -1 else "Positif",
+    #             'hasil': "Negatif" if y_pred[i] == -1 else "Positif",
+    #         })
+
+    #     accuracy = round((tp + tn) / (tp + tn + fp + fn), 4) if (tp + tn + fp + fn) > 0 else 0
+    #     precision = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0
+    #     recall = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0
+
+    #     # Calculate evaluation metrics
+    #     # accuracy = round(accuracy_score(y_test, y_pred) * 100, 2)
+    #     # precision = round(precision_score(y_test, y_pred, average='weighted', zero_division=1) * 100, 2)
+    #     # recall = round(recall_score(y_test, y_pred, average='weighted', zero_division=1) * 100, 2)
+
+    #     return jsonify({
+    #         'accuracy': f"{round(float(accuracy) * 100, 2)}%",
+    #         'precision': f"{round(float(precision) * 100, 2)}%",
+    #         'recall': f"{round(float(recall) * 100, 2)}%",
+    #     #    'accuracy': f"{round(float(accuracy), 2)}%",
+    #     #     'precision': f"{round(float(precision), 2)}%",
+    #     #     'recall': f"{round(float(recall), 2)}%",
+    #         'true_positive': int(tp),
+    #         'true_negative': int(tn),
+    #         'false_positive': int(fp),
+    #         'false_negative': int(fn),
+    #         'jumlah_data': int(len(y_test)),
+
+    #         # 'data_klasifikasi': data
+    #     })
+
+    # except Exception as error:
+    #     flash(f"Terjadi kesalahan saat pelatihan SVM: {str(error)}", "danger")
+    #     return error
+
+
+
+
+    # if request.method == 'GET':
+    #     return render_template('implementasi_svm.html')
+
+    =======================================================================
+
+    # connection = connect_db()
+    # if not connection:
+    #     flash('Koneksi ke database gagal', 'error')
+    #     return redirect(url_for('implementasiSvm.implementasiSvm'))
+
+    # try:
+    #     cursor = connection.cursor()
+    #     # Ambil data dari tabel data_tfidf
+    #     cursor.execute("SELECT labels, tfidf FROM data_tfidf")
+    #     rows = cursor.fetchall()
+
+    #     if not rows:
+    #         return jsonify({"error": "No data available for training."}), 400
+
+    #     # Pisahkan data labels dan tfidf
+    #     text_labeled, text_extraction = zip(*rows)
+
+    #     X = []
+    #     y = []
+    #     invalid_data_count = 0
+
+    #     # Proses untuk mengonversi string tfidf menjadi list of floats
+    #     for extraction, label in zip(text_extraction, text_labeled):
+    #         if extraction and label:
+    #             try:
+    #                 # Mengonversi string tfidf ke dalam list of float
+    #                 extraction_values = list(map(float, extraction.split(',')))
+    #                 X.append(extraction_values)
+    #                 y.append(label)
+    #             except ValueError as e:
+    #                 print(f"Kesalahan dalam memproses data: {e} untuk extraction: {extraction}")
+    #                 invalid_data_count += 1
+    #                 continue
+    #             except Exception as e:
+    #                 print(f"Kesalahan tak terduga: {e} untuk extraction: {extraction}")
+    #                 invalid_data_count += 1
+    #         else:
+    #             invalid_data_count += 1
+
+    #     if len(X) != len(y):
+    #         return jsonify({"error": "Jumlah sampel antara fitur dan label tidak cocok."}), 400
+
+    #     if len(X) == 0:
+    #         return jsonify({"error": "Tidak ada data valid yang tersedia untuk pelatihan setelah pembersihan data yang tidak valid."}), 400
+
+    #     # Convert X and y ke dalam numpy array
+    #     X = np.array(X)
+    #     y = np.array(y)
+
+
+    #     # Pisahkan data menjadi data training dan testing (80% training, 20% testing)
+    #     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    #     # Melatih model SVM
+    #     svm_model = SVC(kernel='linear', random_state=42)
+    #     svm_model.fit(X_train, y_train)
+
+    #     # Melakukan prediksi pada data testing
+    #     y_pred = svm_model.predict(X_test)
+
+    #     # Menghitung akurasi, precision, dan recall
+    #     accuracy = accuracy_score(y_test, y_pred)
+    #     precision = precision_score(y_test, y_pred, average='weighted', zero_division=1)  # Menggunakan 'weighted' untuk multi-class
+    #     recall = recall_score(y_test, y_pred, average='weighted', zero_division=1)  # Menggunakan 'weighted' untuk multi-class
+
+
+    #     print(f"Accuracy: {accuracy}")
+    #     print(f"Precision: {precision}")
+    #     print(f"Recall: {recall}")
+
+    #     return jsonify({
+    #         "accuracy": accuracy,
+    #         "recall": recall,
+    #         "precision": precision
+    #     })
+
+    # except Exception as e:
+    #     flash(f'Terjadi kesalahan: {str(e)}', 'error')
+    #     return redirect(url_for('implementasiSvm.implementasiSvm'))

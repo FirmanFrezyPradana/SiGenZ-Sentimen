@@ -1,0 +1,167 @@
+{% extends "base.html" %} {% block title %}Sample{% endblock %}
+{% block content %}
+<div class="col-md-12 grid-margin">
+    <div class="row">
+        <div class="card-body">
+            <h3 class="font-weight-bold">Evaluasi Hasil</h3>
+            <h6 class="font-weight-normal mb-0"> Akan ditampilkan seluruh hasil evaluasi dari metode</h6>
+        </div>
+        <div class="card col-md-12">
+            <div class="row my-4">
+                <div class="col-md-12">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4">Model Support vector machine</h2>
+                            <div class="table-responsive">
+                                <table id="" class="table table-striped table-bordered ">
+                                    <thead>
+                                        <tr>
+                                            <th>Accuracy</th>
+                                            <th>precision</th>
+                                            <th>recall</th>
+                                            <th>f1-score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-wrap">{{accuracy}}</td>
+                                            <td class="text-wrap">{{precision}}</td>
+                                            <td class="text-wrap">{{recall}}</td>
+                                            <td class="text-wrap">{{f1}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row my-4">
+                <div class="col-md-6 d-flex align-items-stretch">
+                    <div class="card shadow w-100">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4">Classification Report</h2>
+                            {% for label, metrics in report.items() if label != 'accuracy' %}
+                            <p>
+                                <strong>
+                                    {% if label == '1' %}
+                                    Positif
+                                    {% elif label == '-1' %}
+                                    Negatif
+                                    {% else %}
+                                    {{ label.capitalize() }}
+                                    {% endif %}
+                                </strong>:<br>
+                                - Precision: {{ metrics['precision'] }}%<br>
+                                - Recall: {{ metrics['recall'] }}%<br>
+                            </p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-stretch">
+                    <div class="card shadow w-100">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4">Confusion Matrix</h2>
+                            <div class="text-center">
+                                <img src="{{ url_for('static', filename='images/confusion_matrix.png') }}"
+                                    alt="Confusion Matrix" class="img-fluid" style="max-width: 90%;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2 mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4 text-left">WordCloud Sentimen Positif</h2>
+                            <div class="text-center">
+                                <figure class="figure">
+                                    <img src="{{ url_for('static', filename=wordcloud_images['positive']) }}"
+                                        alt="WordCloud Positif" class="img-fluid" style="max-width: 100%;">
+                                </figure>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4 text-left">WordCloud Sentimen Negatif</h2>
+                            <div class="text-center">
+                                <figure class="figure">
+                                    <img src="{{ url_for('static', filename=wordcloud_images['negative']) }}"
+                                        alt="WordCloud Negatif" class="img-fluid" style="max-width: 100%;">
+                                </figure>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row my-4">
+                <div class="col-md-12 d-flex align-items-stretch">
+                    <div class="card shadow w-100">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4">Hasil Prediksi data Testing</h2>
+                            <div class="card-body ">
+                                <div class="table-responsive">
+                                    <table id="table" class="table table-striped table-bordered ">
+                                        <thead>
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Text</th>
+                                                <th>label aktual</th>
+                                                <th>label prediksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if klasifikasiTesting %}
+                                            {% for row in klasifikasiTesting %}
+                                            <tr>
+                                                <td class="text-center">{{ loop.index }}</td>
+                                                <td class="text-wrap">{{ row.teks }}</td>
+                                                <td class="text-wrap">{{ row.label_aktual }}</td>
+                                                <td class="text-wrap">{{ row.label_prediksi }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% else %}
+                                            <tr>
+                                                <td colspan="6" class="text-center">No data available</td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th>No</th>
+                                                <th>Text</th>
+                                                <th>label aktual</th>
+                                                <th>label prediksi</th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='vendors/datatables/jquery.dataTables.min.js')}}"></script>
+<script src="{{ url_for('static', filename='vendors/datatables/dataTables.bootstrap4.min.js')}}"></script>
+<script>
+
+    new DataTable('#table');
+    $(function () {
+        setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
+    });
+
+</script>
+{% endblock %}

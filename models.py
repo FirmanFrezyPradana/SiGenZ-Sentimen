@@ -30,7 +30,6 @@ class Preprocessing(db.Model):
     teks = db.Column(db.Text)
     labels = db.Column(db.String(50))
     preprocessing_text = db.Column(db.Text)
-
 class DataTFIDF(db.Model):
     __tablename__ = 'data_tfidf'
     id = db.Column(db.Integer, primary_key=True)
@@ -38,3 +37,9 @@ class DataTFIDF(db.Model):
     preprocessing_text = db.Column(db.Text)
     labels = db.Column(db.String(50))
     tfidf = db.Column(db.Text)
+class klasifikasiTestingModel(db.Model):
+    __tablename__ = 'klasifikasiTestingModel'
+    id = db.Column(db.Integer, primary_key=True)
+    teks = db.Column(db.Text, nullable=False)
+    label_aktual = db.Column(db.String(10), nullable=False)
+    label_prediksi = db.Column(db.String(10), nullable=False)
