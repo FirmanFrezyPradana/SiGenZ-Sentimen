@@ -6,6 +6,7 @@ from .pembobotan import pembobotan_bp
 from .dataTraining import dataTraining_bp
 from .dataTesting import dataTesting_bp
 from .implementasi import implementasiSvm_bp
+from .cek import cek_bp
 
 # from .traintest import traintest_bp
 # from .testresult import testresult_bp
@@ -22,6 +23,7 @@ def register_blueprints(app):
     app.register_blueprint(dataTraining_bp)
     app.register_blueprint(dataTesting_bp)
     app.register_blueprint(implementasiSvm_bp)
+    app.register_blueprint(cek_bp)
 
     # app.register_blueprint(testresult_bp)
     # app.register_blueprint(register_bp)

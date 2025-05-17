@@ -17,8 +17,8 @@
                                     <thead>
                                         <tr>
                                             <th>Accuracy</th>
-                                            <th>precision</th>
-                                            <th>recall</th>
+                                            <th>Precision</th>
+                                            <th>Recall</th>
                                             <th>f1-score</th>
                                         </tr>
                                     </thead>
@@ -54,6 +54,7 @@
                                 </strong>:<br>
                                 - Precision: {{ metrics['precision'] }}%<br>
                                 - Recall: {{ metrics['recall'] }}%<br>
+                                - f1_score: {{ metrics['f1_score'] }}%<br>
                             </p>
                             {% endfor %}
                         </div>
@@ -147,6 +148,20 @@
                     </div>
                 </div>
             </div>
+            <!-- <div class="row my-3">
+                <div class="col-md-6 d-flex align-items-stretch">
+                    <div class="card shadow w-100">
+                        <div class="card-body">
+                            <h2 class="h4 text-muted mb-4">Hasil distribusi prediksi klasifikasi</h2>
+                            <div style="width: 500px;">
+                                <canvas id="myChart"></canvas>
+                            </div>
+                            <p class="h4 text-muted mb-2">Positif :{{positif_klas}}</p>
+                            <p class="h4 text-muted mb-2">Negatif :{{negatif_klas}} </p>
+                        </div>
+                    </div>
+                </div>
+            </div> -->
         </div>
     </div>
 </div>
@@ -163,5 +178,33 @@
         setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
     });
 
+    // Ambil data dari Flask (Jinja2 Template)
+    const jumlah_positif = "{{ positif_klas }}";
+    const jumlah_negatif = "{{ negatif_klas }}";
+
+
+    const data = {
+        labels: [
+            'Positif',
+            'Negatif'
+        ],
+        datasets: [{
+            label: 'Klasifikasi prediksi',
+            data: [jumlah_positif, jumlah_negatif],
+            backgroundColor: [
+                'rgb(87, 143, 202)',
+                'rgb(73, 61, 158)',
+            ],
+            hoverOffset: 4
+        }]
+    };
+    const config = {
+        type: 'bar',
+        data: data,
+    };
+    var myChart = new Chart(
+        document.getElementById('myChart'),
+        config
+    )
 </script>
 {% endblock %}

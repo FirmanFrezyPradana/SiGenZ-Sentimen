@@ -1,11 +1,10 @@
-from flask import Blueprint, request, jsonify,redirect, url_for,render_template, flash
-from models import DataTFIDF,Preprocessing,klasifikasiTestingModel
+from flask import Blueprint,jsonify,redirect, url_for,render_template, flash
+from models import DataTFIDF,klasifikasiTestingModel
 import numpy as np
 from db_config import db
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report,confusion_matrix,ConfusionMatrixDisplay
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import classification_report,confusion_matrix,ConfusionMatrixDisplay
 import pickle
 from scipy.sparse import csr_matrix
 import os
@@ -16,84 +15,9 @@ from wordcloud import WordCloud
 from sqlalchemy import text
 
 implementasiSvm_bp = Blueprint('implementasiSvm', __name__)
-
-# @implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
-def hal_klasifikasi():
-    try:
-        return render_template('klasifikasi.html')
-    except Exception as error:
-        flash(f"Terjadi kesalahan saat pelatihan SVM: {str(error)}", "danger")
-        return jsonify({"error": str(error)}), 500
-
-# @implementasiSvm_bp.route('/implementasiSvm',methods=['GET','POST'])
 @implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
 def implementasiSvm():
     try:
-
-        # preprocessingData = Preprocessing.query.all()
-        # if not preprocessingData:
-        #     flash("tidak ada data untuk pelatihan.", "error")
-        #     return redirect(url_for('implementasiSvm.implementasiSvm'))
-
-        # teks = [item.teks for item in preprocessingData]
-        # corpus = [item.preprocessing_text for item in preprocessingData]
-        # labels = [1 if item.labels == 'Positif' else -1 for item in preprocessingData]
-
-        # # TF-IDF
-        # tfidf_vectorizer = TfidfVectorizer()
-        # tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
-
-        # # Simpan vectorizer
-        # with open('tfidf_vectorizer.pkl', 'wb') as tfidf_vectorizer_file:
-        #     pickle.dump(tfidf_vectorizer, tfidf_vectorizer_file)
-
-        # # Split data
-        # X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, labels, test_size=0.2, random_state=0)
-
-        # # Latih model SVM
-        # linear = SVC(kernel="linear", C=1.0, random_state=0,class_weight='balanced')
-        # model = linear.fit(X_train, y_train)
-
-        # # Prediksi
-        # y_pred = model.predict(X_test)
-
-        # # Hitung metrik evaluasi (dengan label angka, bukan string)
-        # tp = sum((y_test[i] == 1) and (y_pred[i] == 1) for i in range(len(y_test)))
-        # tn = sum((y_test[i] == -1) and (y_pred[i] == -1) for i in range(len(y_test)))
-        # fp = sum((y_test[i] == -1) and (y_pred[i] == 1) for i in range(len(y_test)))
-        # fn = sum((y_test[i] == 1) and (y_pred[i] == -1) for i in range(len(y_test)))
-
-        # # Fungsi konversi label angka ke string
-        # def interpret_label(val):
-        #     return "Positif" if val == 1 else "Negatif"
-
-        # # Data hasil klasifikasi
-        # data = []
-        # for i in range(len(y_test)):
-        #     data.append({
-        #         'label': interpret_label(y_test[i]),
-        #         'prediksi': interpret_label(y_pred[i])
-        #     })
-
-        # # Hitung metrik
-        # accuracy = round((tp + tn) / (tp + tn + fp + fn), 4) if (tp + tn + fp + fn) > 0 else 0
-        # precision = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0
-        # recall = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0
-
-        # # Response JSON
-        # return jsonify({
-        #     'accuracy': f"{accuracy * 100:.2f}%",
-        #     'precision': f"{precision * 100:.2f}%",
-        #     'recall': f"{recall * 100:.2f}%",
-        #     'true_positive': int(tp),
-        #     'true_negative': int(tn),
-        #     'false_positive': int(fp),
-        #     'false_negative': int(fn),
-        #     'jumlah_data': int(len(y_test)),
-        #     # 'data_klasifikasi': data
-        # })
-
-
         # # metode tfidf manual
         # ========================================== ambil data TF-IDF ================================================
         data_tfidf = DataTFIDF.query.all()
@@ -102,32 +26,44 @@ def implementasiSvm():
             flash("tidak ada data untuk pelatihan.","error")
             return redirect(url_for('implementasiSvm.implementasiSvm'))
         X,y,teks = [],[],[]
-        for record in data_tfidf:
+
+        # mengambil nilai yang kemudian di masukkan ke dalam nilai array
+        for item in data_tfidf:
             try:
-                tfidf_vector = list(map(float, record.tfidf.split(',')))
+                # mengambil nilai dan mengubahnya dengna formal type float "0.1,0.3,0.0" → ['0.1', '0.3', '0.0']
+                tfidf_vector = list(map(float, item.tfidf.split(',')))
                 X.append(tfidf_vector)
-                y.append(1 if record.labels == 'Positif' else -1)
-                teks.append(record.teks)
+                # perbarui label 'positif' menjadi 1 , negatif -1
+                y.append(1 if item.labels == 'Positif' else -1)
+                teks.append(item.teks)
             except Exception as e:
                 print(f"Kesalahan parsing TF-IDF: {e}")
                 continue
+        # cek list X(teks) terdapat tf-idf atau tidak
         if len(X) == 0:
             flash("Semua data tidak valid untuk pelatihan.", "danger")
             # return redirect(url_for('implementasiSvm.implementasiSvm'))
-            return "error"
+            return "Tidak ada data valid untuk pelatihan."
         # ========================================== implementasi metode svm ================================================
+        # mengubah list X menjadi matrix sparse matrix, karena x mengandung banyak nilai 0
         X = csr_matrix(X)
         y = np.array(y)
         teks = np.array(teks)
+
         X_train, X_test, y_train, y_test, teks_train, teks_test = train_test_split(X, y, teks, test_size=0.2, random_state=42)
         svm_model = SVC(kernel='linear',C=1.0,class_weight='balanced')
         model = svm_model.fit(X_train,y_train)
+
         # Menyimpan model SVM linear ke dalam file
-        svm_vectorizer_path = 'static/models/svm_linear_model.pkl'
-        with open(svm_vectorizer_path, 'wb') as model_file:
+        with open('static/model/model_svm_linear.pkl', 'wb') as model_file:
             pickle.dump(model, model_file)
+
+        # Memuat kembali model yang telah disimpan
+        with open('static/model/model_svm_linear.pkl', 'rb') as model_file:
+            linear_model = pickle.load(model_file)
         # ========================================== evaluasi model ================================================
-        y_pred = model.predict(X_test)
+        y_pred = linear_model.predict(X_test)
+
         for i in range(len(y_test)):
             data = klasifikasiTestingModel(
                 teks=teks_test[i],
@@ -136,7 +72,6 @@ def implementasiSvm():
             )
             db.session.add(data)
         db.session.commit()
-        klasifikasiTesting = klasifikasiTestingModel.query.all()
 
         # Hitung metrik evaluasi secara manual (dengan label angka, bukan string)
         # Inisialisasi nilai untuk TP, TN, FP, FN
@@ -162,7 +97,6 @@ def implementasiSvm():
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = (2 * (precision * recall)) / (precision + recall) if (precision + recall) > 0 else 0
 
-
         report = classification_report(y_test, y_pred, output_dict=True)
         report.pop('macro avg', None)
         report.pop('weighted avg', None)
@@ -170,6 +104,7 @@ def implementasiSvm():
             if isinstance(metrics, dict):
                 metrics['precision'] = round(metrics['precision'] * 100, 2)
                 metrics['recall'] = round(metrics['recall'] * 100, 2)
+                metrics['f1_score'] = round(metrics['f1-score'] * 100, 2)
         # ========================================== evaluasi model ================================================
         cm = confusion_matrix(y_test, y_pred, labels=model.classes_)
 
@@ -211,7 +146,10 @@ def implementasiSvm():
             'positive': 'images/wordcloud_positive.png',
             'negative': 'images/wordcloud_negative.png',
         }
-
+        # menampilkan klasifikasi
+        klasifikasiTesting = klasifikasiTestingModel.query.all()
+        jml_klas_positif = klasifikasiTestingModel.query.filter(klasifikasiTestingModel.label_prediksi == 'positif').count()
+        jml_klas_negatif = klasifikasiTestingModel.query.filter(klasifikasiTestingModel.label_prediksi == 'negatif').count()
         return render_template(
         'klasifikasi.html',
         accuracy=accuracy,
@@ -220,7 +158,9 @@ def implementasiSvm():
         f1=f1,
         wordcloud_images=wordcloud_images,
         report=report,
-        klasifikasiTesting=klasifikasiTesting
+        klasifikasiTesting=klasifikasiTesting,
+        positif_klas = jml_klas_positif,
+        negatif_klas = jml_klas_negatif,
         )
 
 

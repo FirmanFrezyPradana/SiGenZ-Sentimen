@@ -121,7 +121,7 @@ def stemmed(text):
     return [stemmer.stem(word) for word in text]
 
 # Preprocessing function
-def preprocess_texts(teks, labels):
+def preprocess_texts(teks, labels=None):
     try:
         df = pd.DataFrame({'teks': teks, 'labels': labels})
         df['teks'] = df['teks'].astype(str)

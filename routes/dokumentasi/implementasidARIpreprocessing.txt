@@ -1,0 +1,94 @@
+from flask import Blueprint, request, jsonify,redirect, url_for,render_template, flash
+from models import DataTFIDF,Preprocessing,klasifikasiTestingModel
+import numpy as np
+from db_config import db
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report,confusion_matrix,ConfusionMatrixDisplay
+from sklearn.feature_extraction.text import TfidfVectorizer
+import pickle
+from scipy.sparse import csr_matrix
+import os
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('Agg')
+from wordcloud import WordCloud
+from sqlalchemy import text
+
+implementasiSvm_bp = Blueprint('implementasiSvm', __name__)
+
+# @implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
+def hal_klasifikasi():
+    try:
+        return render_template('klasifikasi.html')
+    except Exception as error:
+        flash(f"Terjadi kesalahan saat pelatihan SVM: {str(error)}", "danger")
+        return jsonify({"error": str(error)}), 500
+
+# @implementasiSvm_bp.route('/implementasiSvm',methods=['GET','POST'])
+@implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
+def implementasiSvm():
+    try:
+
+        # preprocessingData = Preprocessing.query.all()
+        # if not preprocessingData:
+        #     flash("tidak ada data untuk pelatihan.", "error")
+        #     return redirect(url_for('implementasiSvm.implementasiSvm'))
+
+        # teks = [item.teks for item in preprocessingData]
+        # corpus = [item.preprocessing_text for item in preprocessingData]
+        # labels = [1 if item.labels == 'Positif' else -1 for item in preprocessingData]
+
+        # # TF-IDF
+        # tfidf_vectorizer = TfidfVectorizer()
+        # tfidf_matrix = tfidf_vectorizer.fit_transform(corpus)
+
+        # # Simpan vectorizer
+        # with open('tfidf_vectorizer.pkl', 'wb') as tfidf_vectorizer_file:
+        #     pickle.dump(tfidf_vectorizer, tfidf_vectorizer_file)
+
+        # # Split data
+        # X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, labels, test_size=0.2, random_state=0)
+
+        # # Latih model SVM
+        # linear = SVC(kernel="linear", C=1.0, random_state=0,class_weight='balanced')
+        # model = linear.fit(X_train, y_train)
+
+        # # Prediksi
+        # y_pred = model.predict(X_test)
+
+        # # Hitung metrik evaluasi (dengan label angka, bukan string)
+        # tp = sum((y_test[i] == 1) and (y_pred[i] == 1) for i in range(len(y_test)))
+        # tn = sum((y_test[i] == -1) and (y_pred[i] == -1) for i in range(len(y_test)))
+        # fp = sum((y_test[i] == -1) and (y_pred[i] == 1) for i in range(len(y_test)))
+        # fn = sum((y_test[i] == 1) and (y_pred[i] == -1) for i in range(len(y_test)))
+
+        # # Fungsi konversi label angka ke string
+        # def interpret_label(val):
+        #     return "Positif" if val == 1 else "Negatif"
+
+        # # Data hasil klasifikasi
+        # data = []
+        # for i in range(len(y_test)):
+        #     data.append({
+        #         'label': interpret_label(y_test[i]),
+        #         'prediksi': interpret_label(y_pred[i])
+        #     })
+
+        # # Hitung metrik
+        # accuracy = round((tp + tn) / (tp + tn + fp + fn), 4) if (tp + tn + fp + fn) > 0 else 0
+        # precision = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0
+        # recall = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0
+
+        # # Response JSON
+        # return jsonify({
+        #     'accuracy': f"{accuracy * 100:.2f}%",
+        #     'precision': f"{precision * 100:.2f}%",
+        #     'recall': f"{recall * 100:.2f}%",
+        #     'true_positive': int(tp),
+        #     'true_negative': int(tn),
+        #     'false_positive': int(fp),
+        #     'false_negative': int(fn),
+        #     'jumlah_data': int(len(y_test)),
+        #     # 'data_klasifikasi': data
+        # })

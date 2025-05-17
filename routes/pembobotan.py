@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from flask import Blueprint, jsonify, redirect, url_for, render_template, flash
 from db_config import db
-from tfidf import compute_tfidf
+from tfidf import compute_tfidf,compute_idf,saveTFIDF
 from sqlalchemy import text
 from sklearn.model_selection import train_test_split
 from models import DataTraining,DataTesting, Preprocessing, DataTFIDF
@@ -23,18 +23,19 @@ def proses_tfidf():
         data_preprocessing = Preprocessing.query.all()
         db.session.execute(text("TRUNCATE TABLE data_tfidf"))
         db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
+
         if not data_preprocessing:
             flash ("tidak ada data pada preprocessing yang trsedia .","danger")
             return redirect(url_for('pembobotan.page_tfidf'))
-
         teks = [row.teks for row in data_preprocessing]
         preprocessing_texts = [row.preprocessing_text for row in data_preprocessing]
         labels = [row.labels for row in data_preprocessing]
-
-
+        # hitung tf-idf dan hitung idf asli (dictionary)
         tfidf_df = compute_tfidf(preprocessing_texts)
+        idf = compute_idf(preprocessing_texts)
+        # simpan nilai tfidf
+        saveTFIDF(tfidf_df, idf)
         tfidf_matrix = tfidf_df.to_numpy()
-
 
         for i in range(len(data_preprocessing)):
             if not DataTFIDF.query.filter_by(preprocessing_text=preprocessing_texts[i]).first():
