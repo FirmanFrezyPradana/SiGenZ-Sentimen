@@ -11,6 +11,9 @@ nltk.download('punkt')
 normalisasi_kata_df = pd.read_csv('static/kamus/normalisasi-new.csv')
 normalisasi_kata_dict = dict(zip(normalisasi_kata_df['before'], normalisasi_kata_df['after']))
 
+def case_folding(text):
+    return text.lower()
+
 # Cleaning text
 def cleaning_text(text):
     text = re.sub(r'http\S+|www\.\S+', '', text)
@@ -29,8 +32,6 @@ def cleaning_text(text):
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-def case_folding(text):
-    return text.lower()
 
 def tokenizing(text):
     tokens = word_tokenize(text)
