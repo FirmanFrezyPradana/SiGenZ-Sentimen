@@ -13,13 +13,19 @@ def dashboard():
     jumlah_positif = DataSentimen.query.filter(DataSentimen.labels == 'positif').count()
     jumlah_negatif = DataSentimen.query.filter(DataSentimen.labels == 'negatif').count()
 
-    dominan = (
+    result = (
         klasifikasiTestingModel.query
         .with_entities(klasifikasiTestingModel.label_prediksi)
         .group_by(klasifikasiTestingModel.label_prediksi)
         .order_by(func.count().desc())
         .first()
-    )[0]
+    )
+
+    if result is not None:
+        dominan = result[0]
+    else:
+        dominan = 'Klasifikasi belum dijalankan'  # atau bisa diganti sesuai kebutuhan
+
 
 
     return render_template("dashboard.html",
