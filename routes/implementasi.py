@@ -115,16 +115,17 @@ def implementasiSvm():
         plt.close()
 
         # ========================================== worldcloud ================================================
+        # ambil data dari klasifikasiTestingModel
+        klasifikasi = klasifikasiTestingModel.query.all()
         # Mengambil teks untuk kelas 'positive', 'negative'
         positive_list = []
         negative_list = []
-
         # Iterasi data untuk memisahkan berdasarkan label
-        for record in data_tfidf:
-            if record.labels.lower() == 'positif':
-                positive_list.append(record.preprocessing_text)
-            elif record.labels.lower() == 'negatif':
-                negative_list.append(record.preprocessing_text)
+        for record in klasifikasi:
+            if record.label_prediksi.lower() == 'positif':
+                positive_list.append(record.teks)
+            elif record.label_prediksi.lower() == 'negatif':
+                negative_list.append(record.teks)
 
         # Gabungkan semua teks menjadi satu string per label
         positive_text = ' '.join(positive_list)
