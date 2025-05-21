@@ -50,13 +50,30 @@ def normalisasi(text):
         return [normalisasi_kata_dict.get(word, word) for word in text]
     return text
 
+def convert_negation(text):
+    negation_words = ['tidak', 'bukan', 'belum', 'jangan']
+    result = []
+    skip = False
+    for i in range(len(text)):
+        if skip:
+            skip = False
+            continue
+        if text[i] in negation_words and i + 1 < len(text):
+            combined = f"{text[i]}_{text[i+1]}"
+            result.append(combined)
+            skip = True
+        else:
+            result.append(text[i])
+    return result
+
+
 # # Stopword
 def stopword_removal(text):
     try:
         factory = StopWordRemoverFactory()
         stopword = factory.get_stop_words()
-        # kecualikan karena kata tidak ambigu dalam hal penilaian
-        custom_stopwords = list(filter(lambda x: x != 'tidak', stopword))
+        # costum kata negasi
+        # custom_stopwords = list(filter(lambda x: x != 'tidak', stopword))
         more_stopword = [
             "a", "ak", "abc", "acc", "acoe", "ah", "bola", "bla", "uec", "beuh", "ayo", "bu", "b", "acom", "hahahahha","dekkkk","pol","gemezzz","bang",
             "ada", "adu", "oe", "aldo", "akh", "aka", "aki", "all", "dmi", "enji", "khao", "urgh", "haha", "wkwkwkwkwkwk", "hhhhhhhhh","dekkkkkkkk",
@@ -104,11 +121,11 @@ def stopword_removal(text):
             "jangankan", "janganlah", "jauh", "jawab", "jawaban", "jawabnya", "jelas", "jelaskan", "jelaslah",
             "jelasnya", "jika", "jikalau", "juga", "jumlah", "jumlahnya", "justru", "kala", "kalau", "kalaulah",
             "kalaupun", "kalian", "kami", "kamilah", "kamu", "kamulah", "kan", "kapan", "kapankah", "kapanpun"
-            "meminta", "memintakan", "memisalkan", "memperbuat","tahun","kok","mau","koh","okey"
+            "meminta", "memintakan", "memisalkan", "memperbuat","tahun","kok","mau","koh","okey","tidak"
         ]
 
-        stop_words = custom_stopwords + more_stopword
-        # stop_words = more_stopword
+        # stop_words = custom_stopwords + more_stopword
+        stop_words = more_stopword + stopword
         return [word for word in text if word not in stop_words]
 
     except Exception as e:
@@ -131,9 +148,12 @@ def preprocess_texts(teks, labels=None):
         df['lower_text'] = df['cleaning_text'].apply(case_folding)
         df['tokenized_text'] = df['lower_text'].apply(tokenizing)
         df['normalized_text'] = df['tokenized_text'].apply(normalisasi)
-        df['stopword_text'] = df['normalized_text'].apply(stopword_removal)
+        # tambahkan converted_negation
+        df['converted_negation'] = df['normalized_text'].apply(convert_negation)
+        df['stopword_text'] = df['converted_negation'].apply(stopword_removal)
         df['hasil_text'] = df['stopword_text'].apply(stemmed)
         df['preprocessing_text'] = df['hasil_text'].apply(lambda x: ' '.join(x) if isinstance(x, list) else x)
+
         return df
     except Exception as e:
         flash(f"terjadi kesalahan saat preprocessing data: {e}", "danger")
