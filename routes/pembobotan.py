@@ -9,6 +9,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sqlalchemy import text
 from sklearn.model_selection import train_test_split
 from models import DataTraining,DataTesting, Preprocessing, DataTFIDF
+import pickle
 
 pembobotan_bp = Blueprint('pembobotan', __name__)
 @pembobotan_bp.route('/pembobotan')
@@ -46,6 +47,10 @@ def proses_tfidf():
         # ========================================== start pembobotan ================================================
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(preprocessing_texts)
+
+        # Simpan ke file
+        with open('static/model/tfidf_vectorizer.pkl', 'wb') as tfidf_vectorizer_file:
+            pickle.dump(vectorizer, tfidf_vectorizer_file)
 
         # Konversi hasilnya ke DataFrame
         df_tfidf = pd.DataFrame(
