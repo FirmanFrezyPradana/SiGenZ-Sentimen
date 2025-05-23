@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 from flask import Blueprint, jsonify, redirect, url_for, render_template, flash
 from db_config import db
-from tfidf import compute_tfidf,compute_idf,saveTFIDF
+## manual
+# from tfidf import compute_tfidf,compute_idf,saveTFIDF
+## library
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sqlalchemy import text
 from sklearn.model_selection import train_test_split
 from models import DataTraining,DataTesting, Preprocessing, DataTFIDF
@@ -20,23 +23,39 @@ def page_tfidf():
 @pembobotan_bp.route('/proses-tfidf', methods=['POST'])
 def proses_tfidf():
     try:
+        # ========================================== ambil data dari tabel ================================================
         data_preprocessing = Preprocessing.query.all()
         db.session.execute(text("TRUNCATE TABLE data_tfidf"))
         db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
-
         if not data_preprocessing:
             flash ("tidak ada data pada preprocessing yang trsedia .","danger")
             return redirect(url_for('pembobotan.page_tfidf'))
+        # menyiapkan daftar teks asli, teks hasil preprocessing, dan label dari dataset
         teks = [row.teks for row in data_preprocessing]
         preprocessing_texts = [row.preprocessing_text for row in data_preprocessing]
         labels = [row.labels for row in data_preprocessing]
-        # hitung tf-idf dan hitung idf asli (dictionary)
-        tfidf_df = compute_tfidf(preprocessing_texts)
-        idf = compute_idf(preprocessing_texts)
-        # simpan nilai tfidf
-        saveTFIDF(tfidf_df, idf)
-        tfidf_matrix = tfidf_df.to_numpy()
 
+        # ========================================== start manual ================================================
+        # hitung tf-idf dan hitung idf asli (dictionary)
+        # tfidf_df = compute_tfidf(preprocessing_texts)
+        # idf = compute_idf(preprocessing_texts)
+        # saveTFIDF(tfidf_df, idf)
+        # tfidf_matrix = tfidf_df.to_numpy()
+        # ========================================== end manual ================================================
+
+        # ========================================== start pembobotan ================================================
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(preprocessing_texts)
+
+        # Konversi hasilnya ke DataFrame
+        df_tfidf = pd.DataFrame(
+            tfidf_matrix.toarray(),
+            columns=vectorizer.get_feature_names_out()
+        )
+        tfidf_matrix = df_tfidf.to_numpy()
+        # ========================================== end pembobotan ================================================
+
+        # ========================================== start input database ================================================
         for i in range(len(data_preprocessing)):
             if not DataTFIDF.query.filter_by(preprocessing_text=preprocessing_texts[i]).first():
                 tfidf_json = ",".join([str(round(val, 6)) for val in tfidf_matrix[i].tolist()])
@@ -47,14 +66,14 @@ def proses_tfidf():
                     tfidf=tfidf_json
                 )
                 db.session.add(data_tfidf)
-
         db.session.commit()
         db.session.execute(text("TRUNCATE TABLE data_testing"))
         db.session.execute(text("TRUNCATE TABLE data_training"))
 
+        # ========================================== split data ================================================
         split_data()
-        flash('Data TF-IDF berhasil disimpan!','success')
-        return redirect(url_for('pembobotan.page_tfidf'))
+        # ========================================== redirect succses ================================================
+        return redirect(url_for('pembobotan.page_tfidf', status='tfidf_success'))
 
     except Exception as error:
         db.session.rollback()
@@ -95,6 +114,7 @@ def split_data():
             ))
 
         db.session.commit()
+        flash('Data Berhasil di split ke dalam data training dan testing!','success')
     except Exception as error:
         db.session.rollback()
         flash(f"Terjadi kesalahan saat split data: {error}", "danger")

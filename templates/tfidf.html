@@ -46,10 +46,10 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
-                                    <form action="{{ url_for('pembobotan.proses_tfidf')}}?status=preprocess_success"
-                                        method="POST" id="preprocessingForm">
+                                    <form action="{{ url_for('pembobotan.proses_tfidf')}}?status=tfidf_success"
+                                        method="POST" id="pembobotanForm">
                                         <button type="submit" class="btn btn-danger"
-                                            id="preprocessingButton">Ya!</button>
+                                            id="pembobotanButton">Ya!</button>
                                     </form>
                                 </div>
                             </div>
@@ -119,10 +119,10 @@
     const status = urlParams.get('status');
 
     // Tampilkan Sweet Alert berdasarkan status preprocess
-    if (status === 'preprocess_success') {
+    if (status === 'tfidf_success') {
         Swal.fire({
             icon: 'success',
-            title: 'Pre-processing berhasil dilakukan!',
+            title: 'Feature Extraction berhasil dilakukan!',
             showConfirmButton: false,
             timer: 2000
         });
@@ -136,8 +136,8 @@
     }
 
     // Fungsi untuk menampilkan loading overlay
-    document.getElementById("preprocessingForm").onsubmit = function () {
-        const button = document.getElementById("preprocessingButton");
+    document.getElementById("pembobotanForm").onsubmit = function () {
+        const button = document.getElementById("pembobotanButton");
         button.disabled = true;
         button.innerHTML = "Sedang Memproses...";
         // Menampilkan overlay loading
