@@ -25,8 +25,7 @@
                     <form action="{{ url_for('preprocessing.preprocessing_data') }}?status=preprocess_success"
                         method="POST" id="preprocessingForm">
                         <button type="submit" class="btn btn-primary" id="preprocessingButton">
-                            <i class="ti-eraser"></i> Page
-                            Preprocessing</button>
+                            <i class="ti-eraser"></i> Proses Preprocessing</button>
                     </form>
                 </div>
                 <div class="card-body ">
@@ -95,13 +94,16 @@
 
     // Tampilkan Sweet Alert berdasarkan status preprocess
     if (status === 'preprocess_success') {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
         Swal.fire({
             icon: 'success',
             title: 'Pre-processing berhasil dilakukan!',
             showConfirmButton: false,
-            timer: 2000
+            timer: 3000,
         });
     }
+
 
     // Fungsi untuk menampilkan loading overlay
     document.getElementById("preprocessingForm").onsubmit = function () {
@@ -111,6 +113,7 @@
 
         // Menampilkan overlay loading
         document.getElementById("loadingOverlay").style.display = "block";
+
     };
 
     // Menutup pesan alert setelah 4 detik
