@@ -1,0 +1,78 @@
+# # evaluasi data training
+#         data_tfidf = DataTFIDF.query.all()
+#         if not data_tfidf:
+#             return jsonify({"message": "Tidak ada data untuk pelatihan."}), 400
+
+#         X, y = [], []
+
+#         for item in data_tfidf:
+#             try:
+#                 tfidf_vector = list(map(float, item.tfidf.split(',')))
+#                 X.append(tfidf_vector)
+#                 y.append(1 if item.labels.lower() == 'positif' else -1)
+#             except:
+#                 continue
+
+#         if len(X) == 0:
+#             return jsonify({"message": "Semua data tidak valid untuk pelatihan."}), 400
+
+#         X = csr_matrix(X)
+#         y = np.array(y)
+
+#         # preprocessingData = Preprocessing.query.all()
+#         # if not preprocessingData:
+#         #     flash("tidak ada data untuk pelatihan.", "error")
+#         #     return redirect(url_for('implementasiSvm.implementasiSvm'))
+
+#         # teks = [item.teks for item in preprocessingData]
+#         # X = [item.preprocessing_text for item in preprocessingData]
+#         # y = [1 if item.labels.lower() == 'positif' else -1 for item in preprocessingData]
+
+#         # # TF-IDF
+#         # tfidf_vectorizer = TfidfVectorizer()
+#         # X = tfidf_vectorizer.fit_transform(X)
+
+#         # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+#         # X_train, X_test, y_train, y_test = train_test_split(tfidf_matrix, labels, test_size=0.2, random_state=0, stratify=labels)
+#         cv_scores = cross_val_score(SVC(kernel='linear', C=1.0, class_weight='balanced'), X, y, cv=5)
+#         cv_mean = round(np.mean(cv_scores) * 100, 2)
+
+#         # Split data
+#         X_train, X_test, y_train, y_test = train_test_split(
+#             X, y, test_size=0.1, random_state=0, stratify=y
+#         )
+
+#         model = SVC(kernel='linear', C=1.0, class_weight='balanced')
+#         model.fit(X_train, y_train)
+
+#         # # Evaluasi Training
+#         y_pred_train = model.predict(X_train)
+#         train_report = classification_report(y_train, y_pred_train, output_dict=True)
+#         train_accuracy = round(accuracy_score(y_train, y_pred_train) * 100, 2)
+#         train_precision = round(train_report['1']['precision'] * 100, 2) if '1' in train_report else 0
+#         train_recall = round(train_report['1']['recall'] * 100, 2) if '1' in train_report else 0
+
+
+#         # # Evaluasi Testing
+#         y_pred_test = model.predict(X_test)
+#         test_report = classification_report(y_test, y_pred_test, output_dict=True)
+#         test_accuracy = round(accuracy_score(y_test, y_pred_test) * 100, 2)
+#         test_precision = round(test_report['1']['precision'] * 100, 2) if '1' in test_report else 0
+#         test_recall = round(test_report['1']['recall'] * 100, 2) if '1' in test_report else 0
+
+#         # Return dalam bentuk JSON
+#         return jsonify({
+#             "training": {
+#             "accuracy": train_accuracy,
+#             "precision": train_precision,
+#             "recall": train_recall
+#             },
+#             "testing": {
+#             "accuracy": test_accuracy,
+#             "precision": test_precision,
+#             "recall": test_recall
+#             },
+#             "cross_validation": {
+#                 "cv_mean_accuracy": cv_mean
+#             }
+#         })
