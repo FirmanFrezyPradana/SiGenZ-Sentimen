@@ -1,9 +1,9 @@
 from flask import Blueprint,jsonify,redirect, url_for,render_template, flash
-from models import DataTFIDF,klasifikasiTestingModel
+from models import DataTFIDF,klasifikasiTestingModel,DataTraining,DataTesting
 import numpy as np
 from db_config import db
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
+# from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report,confusion_matrix,ConfusionMatrixDisplay
 import pickle
 from scipy.sparse import csr_matrix
@@ -18,84 +18,120 @@ implementasiSvm_bp = Blueprint('implementasiSvm', __name__)
 @implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
 def implementasiSvm():
     try:
-        # ========================================== ambil data TF-IDF ================================================
-        data_tfidf = DataTFIDF.query.all()
-        db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
-        if not data_tfidf:
-            flash("tidak ada data untuk pelatihan.","error")
-            return redirect(url_for('implementasiSvm.implementasiSvm'))
-        X,y,teks = [],[],[]
+        # ========================================== data training ================================================
+        # Ambil data training dari tabel DataTraining
+        data_training = DataTraining.query.all()
 
-        # mengambil nilai yang kemudian di masukkan ke dalam nilai array
-        for item in data_tfidf:
+        # Validasi jika tidak ada data
+        if not data_training:
+            flash("Tidak ada data untuk pelatihan.", "error")
+            return redirect(url_for('implementasiSvm.implementasiSvm'))
+
+        X_train, y_train = [], [],
+
+        # Konversi data TF-IDF dan label
+        for item in data_training:
             try:
-                # mengambil nilai dan mengubahnya dengna formal type float "0.1,0.3,0.0" → ['0.1', '0.3', '0.0']
                 tfidf_vector = list(map(float, item.tfidf.split(',')))
-                X.append(tfidf_vector)
-                y.append(1 if item.labels.lower() == 'positif' else -1)
-                teks.append(item.teks)
+                X_train.append(tfidf_vector)
+                y_train.append(1 if item.labels.lower() == 'positif' else -1)
             except Exception as e:
                 print(f"Kesalahan parsing TF-IDF: {e}")
                 continue
-        # cek list X(teks) terdapat tf-idf atau tidak
-        if len(X) == 0:
+
+        # Cek apakah ada data valid
+        if len(X_train) == 0:
             flash("Semua data tidak valid untuk pelatihan.", "danger")
-            # return redirect(url_for('implementasiSvm.implementasiSvm'))
             return "Tidak ada data valid untuk pelatihan."
-        # ========================================== implementasi metode svm ================================================
-        # mengubah list X menjadi matrix sparse matrix, karena x mengandung banyak nilai 0
-        X = csr_matrix(X)
-        y = np.array(y)
-        teks = np.array(teks)
 
-        X_train, X_test, y_train, y_test, teks_train, teks_test = train_test_split(X, y, teks, test_size=0.2, random_state=42)
-        svm_model = SVC(kernel='linear',C=1.0,class_weight='balanced')
-        model = svm_model.fit(X_train,y_train)
+        # Ubah ke array/matrix
+        X_train = csr_matrix(X_train)
+        y_train = np.array(y_train)
 
-        # Menyimpan model SVM linear ke dalam file
+        # Training model SVM
+        svm_model = SVC(kernel='linear', C=1.0, class_weight='balanced',random_state=0)
+        model = svm_model.fit(X_train, y_train)
+
+        y_train_pred = model.predict(X_train)
+
+        # Simpan model ke file
         with open('static/model/model_svm_linear.pkl', 'wb') as model_file:
             pickle.dump(model, model_file)
 
-        # Memuat kembali model yang telah disimpan
-        with open('static/model/model_svm_linear.pkl', 'rb') as model_file:
-            linear_model = pickle.load(model_file)
-        # ========================================== evaluasi model ================================================
-        y_pred = linear_model.predict(X_test)
+        # ========================================== data testing ================================================
+        # Kosongkan tabel klasifikasi hasil sebelumnya
+        db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
 
+        # Ambil data dari tabel data_testing
+        data_testing = DataTesting.query.all()
+
+        if not data_testing:
+            flash("Tidak ada data untuk pengujian.", "error")
+            return redirect(url_for('implementasiSvm.implementasiSvm'))
+
+        X_test, y_test, teks_test, prep_test = [], [], [], []
+
+        # Siapkan data uji coba
+        for item in data_testing:
+            try:
+                tfidf_vector = list(map(float, item.tfidf.split(',')))
+                X_test.append(tfidf_vector)
+                y_test.append(1 if item.labels.lower() == 'positif' else -1)
+                teks_test.append(item.teks)
+                prep_test.append(item.preprocessing_text)
+            except Exception as e:
+                print(f"Kesalahan parsing TF-IDF testing: {e}")
+                continue
+
+        # Pastikan ada data
+        if len(X_test) == 0:
+            flash("Semua data testing tidak valid.", "danger")
+            return "Tidak ada data valid untuk pengujian."
+
+        # Ubah ke bentuk array/matrix
+        X_test = csr_matrix(X_test)
+        y_test = np.array(y_test)
+
+        # Load model yang telah dilatih
+        with open('static/model/model_svm_linear.pkl', 'rb') as model_file:
+            model = pickle.load(model_file)
+
+        # Lakukan prediksi
+        y_pred = model.predict(X_test)
+
+        # Simpan hasil klasifikasi ke database
         for i in range(len(y_test)):
-            data = klasifikasiTestingModel(
+            hasil = klasifikasiTestingModel(
                 teks=teks_test[i],
+                preprocessing=prep_test[i],
                 label_aktual="Positif" if y_test[i] == 1 else "Negatif",
                 label_prediksi="Positif" if y_pred[i] == 1 else "Negatif"
             )
-            db.session.add(data)
+            db.session.add(hasil)
         db.session.commit()
-
-        # Hitung metrik evaluasi secara manual (dengan label angka, bukan string)
+        # ========================================== evaluasi model ================================================
         # Inisialisasi nilai untuk TP, TN, FP, FN
         tp = tn = fp = fn = 0
         # data = []
 
         # Iterasi melalui semua data untuk menghitung TP, TN, FP, FN
-        for i in range(len(y_test)):
-            if y_test[i] == -1 and y_pred[i] == -1:  # True Negative
+        for i in range(len(y_train)):
+            if y_train[i] == -1 and y_train_pred[i] == -1:  # True Negative
                 tn += 1
-            elif y_test[i] == 1 and y_pred[i] == 1:  # True Positive
+            elif y_train[i] == 1 and y_train_pred[i] == 1:  # True Positive
                 tp += 1
-            elif y_test[i] == -1 and y_pred[i] == 1:  # False Positive
+            elif y_train[i] == -1 and y_train_pred[i] == 1:  # False Positive
                 fp += 1
-            elif y_test[i] == 1 and y_pred[i] == -1:  # False Negative
+            elif y_train[i] == 1 and y_train_pred[i] == -1:  # False Negative
                 fn += 1
 
-
-        # Menghitung metrik
         # Hitung metrik evaluasi tanpa pembulatan
         accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = (2 * (precision * recall)) / (precision + recall) if (precision + recall) > 0 else 0
 
-        report = classification_report(y_test, y_pred, output_dict=True)
+        report = classification_report(y_train, y_train_pred, output_dict=True)
         report.pop('macro avg', None)
         report.pop('weighted avg', None)
         for label, metrics in report.items():
@@ -104,8 +140,7 @@ def implementasiSvm():
                 metrics['recall'] = round(metrics['recall'] * 100, 2)
                 metrics['f1_score'] = round(metrics['f1-score'] * 100, 2)
         # ========================================== evaluasi model ================================================
-        cm = confusion_matrix(y_test, y_pred, labels=model.classes_)
-
+        cm = confusion_matrix(y_train, y_train_pred, labels=model.classes_)
         cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=model.classes_)
         cm_display.plot(cmap='Blues', values_format='d')
         confusion_matrix_path = os.path.join("static", "images", "confusion_matrix.png")
@@ -113,6 +148,7 @@ def implementasiSvm():
         plt.close()
 
         # ========================================== worldcloud ================================================
+
         # ambil data dari klasifikasiTestingModel
         klasifikasi = klasifikasiTestingModel.query.all()
         # Mengambil teks untuk kelas 'positive', 'negative'
@@ -121,9 +157,9 @@ def implementasiSvm():
         # Iterasi data untuk memisahkan berdasarkan label
         for record in klasifikasi:
             if record.label_prediksi.lower() == 'positif':
-                positive_list.append(record.teks)
+                positive_list.append(record.preprocessing)
             elif record.label_prediksi.lower() == 'negatif':
-                negative_list.append(record.teks)
+                negative_list.append(record.preprocessing)
 
         # Gabungkan semua teks menjadi satu string per label
         positive_text = ' '.join(positive_list)
@@ -149,6 +185,7 @@ def implementasiSvm():
         klasifikasiTesting = klasifikasiTestingModel.query.all()
         jml_klas_positif = klasifikasiTestingModel.query.filter(klasifikasiTestingModel.label_prediksi == 'positif').count()
         jml_klas_negatif = klasifikasiTestingModel.query.filter(klasifikasiTestingModel.label_prediksi == 'negatif').count()
+
         return render_template(
         'klasifikasi.html',
         accuracy=accuracy,
