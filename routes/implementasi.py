@@ -18,7 +18,6 @@ implementasiSvm_bp = Blueprint('implementasiSvm', __name__)
 @implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
 def implementasiSvm():
     try:
-        # # metode tfidf manual
         # ========================================== ambil data TF-IDF ================================================
         data_tfidf = DataTFIDF.query.all()
         db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
@@ -33,8 +32,7 @@ def implementasiSvm():
                 # mengambil nilai dan mengubahnya dengna formal type float "0.1,0.3,0.0" → ['0.1', '0.3', '0.0']
                 tfidf_vector = list(map(float, item.tfidf.split(',')))
                 X.append(tfidf_vector)
-                # perbarui label 'positif' menjadi 1 , negatif -1
-                y.append(1 if item.labels == 'Positif' else -1)
+                y.append(1 if item.labels.lower() == 'positif' else -1)
                 teks.append(item.teks)
             except Exception as e:
                 print(f"Kesalahan parsing TF-IDF: {e}")
