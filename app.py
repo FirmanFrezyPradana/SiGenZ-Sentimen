@@ -29,6 +29,7 @@ from db_config import db
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 
 # Konfigurasi SQLAlchemy
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@127.0.0.1/Genz_sentimen'
