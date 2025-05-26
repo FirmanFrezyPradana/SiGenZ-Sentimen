@@ -47,9 +47,8 @@
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
                                     <form action="{{ url_for('pembobotan.proses_tfidf')}}?status=tfidf_success"
-                                        method="POST" id="pembobotanForm">
-                                        <button type="submit" class="btn btn-danger"
-                                            id="pembobotanButton">Ya!</button>
+                                        method="GET">
+                                        <button type="submit" class="btn btn-danger" id="pembobotanButton">Ya!</button>
                                     </form>
                                 </div>
                             </div>
@@ -111,6 +110,7 @@
 {{ super() }}
 <script src="{{ url_for('static', filename='vendors/datatables/jquery.dataTables.min.js')}}"></script>
 <script src="{{ url_for('static', filename='vendors/datatables/dataTables.bootstrap4.min.js')}}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 <script>
     new DataTable('#table');
 
@@ -120,29 +120,33 @@
 
     // Tampilkan Sweet Alert berdasarkan status preprocess
     if (status === 'tfidf_success') {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
         Swal.fire({
             icon: 'success',
-            title: 'Feature Extraction berhasil dilakukan!',
+            title: 'TF-IDF berhasil dilakukan!',
             showConfirmButton: false,
-            timer: 2000
-        });
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Upload dataset gagal dilakukan!',
-            showConfirmButton: false,
-            timer: 2000
+            timer: 3000,
         });
     }
 
     // Fungsi untuk menampilkan loading overlay
-    document.getElementById("pembobotanForm").onsubmit = function () {
-        const button = document.getElementById("pembobotanButton");
-        button.disabled = true;
-        button.innerHTML = "Sedang Memproses...";
-        // Menampilkan overlay loading
-        document.getElementById("loadingOverlay").style.display = "block";
-    };
+    document.getElementById("pembobotanButton").addEventListener("click", function () {
+        // Tutup modal
+        $('#preprocessingModal').modal('hide');
+
+        // Tampilkan overlay loading
+        document.getElementById("loadingOverlay").style.display = "flex";
+
+        // Ganti isi tombol
+        this.disabled = true;
+        this.innerHTML = "Sedang Memproses...";
+
+        // Submit form secara manual setelah sedikit delay agar modal sempat menutup
+        setTimeout(() => {
+            document.getElementById("pembobotanForm").submit();
+        }, 500);
+    });
 
     // Menutup pesan alert setelah 4 detik
     $(function () {

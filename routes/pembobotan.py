@@ -21,7 +21,7 @@ def page_tfidf():
         flash(f'Terjadi kesalahan: {str(e)}', 'error')
         return render_template('tfidf.html', data=[])
 
-@pembobotan_bp.route('/proses-tfidf', methods=['POST'])
+@pembobotan_bp.route('/proses-tfidf', methods=['GET'])
 def proses_tfidf():
     try:
         # ========================================== ambil data dari tabel ================================================
@@ -62,15 +62,14 @@ def proses_tfidf():
 
         # ========================================== start input database ================================================
         for i in range(len(data_preprocessing)):
-            if not DataTFIDF.query.filter_by(preprocessing_text=preprocessing_texts[i]).first():
-                tfidf_json = ",".join([str(round(val, 6)) for val in tfidf_matrix[i].tolist()])
-                data_tfidf = DataTFIDF(
-                    teks=teks[i],
-                    preprocessing_text=preprocessing_texts[i],
-                    labels=labels[i],
-                    tfidf=tfidf_json
-                )
-                db.session.add(data_tfidf)
+            tfidf_json = ",".join([str(round(val, 6)) for val in tfidf_matrix[i].tolist()])
+            data_tfidf = DataTFIDF(
+                teks=teks[i],
+                preprocessing_text=preprocessing_texts[i],
+                labels=labels[i],
+                tfidf=tfidf_json
+            )
+            db.session.add(data_tfidf)
         db.session.commit()
         db.session.execute(text("TRUNCATE TABLE data_testing"))
         db.session.execute(text("TRUNCATE TABLE data_training"))
