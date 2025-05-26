@@ -24,7 +24,7 @@ def dashboard():
     if result is not None:
         dominan = result[0]
     else:
-        dominan = 'Klasifikasi belum dijalankan'  # atau bisa diganti sesuai kebutuhan
+        dominan = 'Model belum di buat'  # atau bisa diganti sesuai kebutuhan
 
 
 
