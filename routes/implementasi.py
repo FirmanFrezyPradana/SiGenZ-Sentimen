@@ -3,8 +3,10 @@ from models import DataTFIDF,klasifikasiTestingModel,DataTraining,DataTesting
 import numpy as np
 from db_config import db
 from sklearn.svm import SVC
+from sklearn.model_selection import StratifiedKFold
 # from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report,confusion_matrix,ConfusionMatrixDisplay
+from sklearn.metrics import classification_report,confusion_matrix,ConfusionMatrixDisplay,accuracy_score, precision_score, recall_score, f1_score, classification_report
+
 import pickle
 from scipy.sparse import csr_matrix
 import os
@@ -48,11 +50,36 @@ def implementasiSvm():
         X_train = csr_matrix(X_train)
         y_train = np.array(y_train)
 
+        # ========================================== testing k-fold cross validation ================================================
+        # # pengujian Stratified K-Fold
+        # k = 5  # Jumlah fold
+        # skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=0)
+
+        # accuracies = []
+        # fold_number = 1
+
+        # for train_index, val_index in skf.split(X_train, y_train):
+        #     X_fold_train, X_fold_val = X_train[train_index], X_train[val_index]
+        #     y_fold_train, y_fold_val = y_train[train_index], y_train[val_index]
+
+        #     svm_model = SVC(kernel='linear', C=1.0, class_weight='balanced', random_state=0)
+        #     model = svm_model.fit(X_fold_train, y_fold_train)
+        #     y_pred = model.predict(X_fold_val)
+
+        #     acc = accuracy_score(y_fold_val, y_pred)
+        #     accuracies.append(acc)
+        #     print(f"=== Fold K{fold_number} ===")
+        #     print(f"Accuracy : {acc:.4f}")
+        #     print("----------------------------")
+        #     fold_number += 1
+        # # Rata-rata akurasi
+        # print(f"Rata-rata Accuracy: {np.mean(accuracies):.4f}")
+        # ========================================== testing k-fold cross validation ================================================
+
         # Training model SVM
         svm_model = SVC(kernel='linear', C=1.0, class_weight='balanced',random_state=0)
-        model = svm_model.fit(X_train, y_train)
 
-        y_train_pred = model.predict(X_train)
+        model = svm_model.fit(X_train, y_train)
 
         # Simpan model ke file
         with open('static/model/model_svm_linear.pkl', 'wb') as model_file:
@@ -115,23 +142,22 @@ def implementasiSvm():
         # data = []
 
         # Iterasi melalui semua data untuk menghitung TP, TN, FP, FN
-        for i in range(len(y_train)):
-            if y_train[i] == -1 and y_train_pred[i] == -1:  # True Negative
+        for i in range(len(y_test)):
+            if y_test[i] == -1 and y_pred[i] == -1:  # True Negative
                 tn += 1
-            elif y_train[i] == 1 and y_train_pred[i] == 1:  # True Positive
+            elif y_test[i] == 1 and y_pred[i] == 1:  # True Positive
                 tp += 1
-            elif y_train[i] == -1 and y_train_pred[i] == 1:  # False Positive
+            elif y_test[i] == -1 and y_pred[i] == 1:  # False Positive
                 fp += 1
-            elif y_train[i] == 1 and y_train_pred[i] == -1:  # False Negative
+            elif y_test[i] == 1 and y_pred[i] == -1:  # False Negative
                 fn += 1
-
         # Hitung metrik evaluasi tanpa pembulatan
         accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = (2 * (precision * recall)) / (precision + recall) if (precision + recall) > 0 else 0
 
-        report = classification_report(y_train, y_train_pred, output_dict=True)
+        report = classification_report(y_test, y_pred, output_dict=True)
         report.pop('macro avg', None)
         report.pop('weighted avg', None)
         for label, metrics in report.items():
@@ -140,9 +166,12 @@ def implementasiSvm():
                 metrics['recall'] = round(metrics['recall'] * 100, 2)
                 metrics['f1_score'] = round(metrics['f1-score'] * 100, 2)
         # ========================================== evaluasi model ================================================
-        cm = confusion_matrix(y_train, y_train_pred, labels=model.classes_)
-        cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=model.classes_)
+        cm = confusion_matrix(y_test, y_pred, labels=[-1, 1])
+        cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[-1, 1])
+        # cm = confusion_matrix(y_test, y_pred, labels=[1, -1])
+        # cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[-1, 1])
         cm_display.plot(cmap='Blues', values_format='d')
+
         confusion_matrix_path = os.path.join("static", "images", "confusion_matrix.png")
         plt.savefig(confusion_matrix_path)
         plt.close()
@@ -202,5 +231,4 @@ def implementasiSvm():
 
     except Exception as error:
         flash(f"Terjadi kesalahan saat pelatihan SVM: {str(error)}", "danger")
-        return jsonify({"error": str(error)}), 500
-        # return redirect(url_for('implementasiSvm.implementasiSvm'))
+        return redirect(url_for('implementasiSvm.implementasiSvm'))
