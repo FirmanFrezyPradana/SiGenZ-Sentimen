@@ -35,6 +35,7 @@ def preprocessing_data():
         # Kosongkan tabel lama
         db.session.execute(text("TRUNCATE TABLE preprocessing"))
         db.session.execute(text("TRUNCATE TABLE data_tfidf"))
+        db.session.commit()
         records = [
             Preprocessing(teks=row['teks'], labels=row['labels'], preprocessing_text=row['preprocessing_text'])
             for _, row in df.iterrows()
