@@ -43,11 +43,22 @@
                                         File yang dapat di upload hanya file berformat .csv dengan kolom "Teks" ,
                                         "sosmed", "labels"
                                     </div>
-                                    <form action="{{ url_for('importData.import_csv') }}" class="mb-3" method="post"
+                                    <!-- <form action="/import_data" class="mb-3" method="POST"
                                         enctype="multipart/form-data">
                                         <label for="formFile" class="form-label">File CSV</label>
                                         <input class="form-control mb-3" type="file" id="formFile" name="file" required>
                                         <button type="submit" class="btn text-center btn-primary pt-2">Upload</button>
+                                    </form> -->
+                                    <form action="/import_data?status=import_success" method="post"
+                                        enctype="multipart/form-data" id="uploadForm">
+                                        <input type="file" name="file" class="file-upload-default"
+                                            style="display: none;" accept=".csv" required
+                                            onchange="document.getElementById('uploadForm').submit();" />
+                                        <button type="button"
+                                            class="file-upload-browse btn mb-2 mr-2 btn-outline-primary"
+                                            onclick="document.querySelector('input[type=file]').click();">
+                                            <span class="fe fe-file-plus fe-16 mr-2"></span>Import Data CSV File
+                                        </button>
                                     </form>
                                 </div>
                             </div>
@@ -78,8 +89,7 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
-                                    <form action="{{ url_for('dataSentimen.delete_all_data') }}" method="POST"
-                                        id="uploadForm">
+                                    <form action="/dataSentimen/Delete_all" method="POST" id="uploadForm">
                                         <button type="submit" class="btn btn-danger">Ya, Hapus!</button>
                                     </form>
                                 </div>
@@ -91,8 +101,8 @@
                         data-target="#resetDataModal">
                         <i class="ti-trash"></i> Reset data
                     </button>
-                    <div class="modal fade" id="resetDataModal" tabindex="-1"
-                        aria-labelledby="resetDataModalLabel" aria-hidden="true">
+                    <div class="modal fade" id="resetDataModal" tabindex="-1" aria-labelledby="resetDataModalLabel"
+                        aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
@@ -111,8 +121,7 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-warning" data-dismiss="modal">Tidak</button>
-                                    <form action="{{ url_for('dataSentimen.reset_all_data') }}" method="POST"
-                                        id="uploadForm">
+                                    <form action="/dataSentimen/reset_all" method="POST" id="uploadForm">
                                         <button type="submit" class="btn btn-danger">Ya, Reset All!</button>
                                     </form>
                                 </div>
@@ -162,6 +171,17 @@
         </div>
     </div>
 </div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display:none;">
+    <div class="overlay-content">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+        <p>Import Data, Proses membutuhkan waktu mohon tunggu sebentar...</p>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block js %}
@@ -176,19 +196,14 @@
     const status = urlParams.get('status');
 
     // Tampilkan Sweet Alert berdasarkan status preprocess
-    if (status === 'Upload_success') {
+    if (status === 'import_success') {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
         Swal.fire({
             icon: 'success',
-            title: 'Upload dataset berhasil dilakukan!',
+            title: 'Import data berhasil dilakukan!',
             showConfirmButton: false,
-            timer: 2000
-        });
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Upload dataset berhasil gagal!',
-            showConfirmButton: false,
-            timer: 2000
+            timer: 3000,
         });
     }
 
@@ -204,6 +219,5 @@
     $(function () {
         setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
     });
-
 </script>
 {% endblock %}
