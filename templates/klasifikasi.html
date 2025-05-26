@@ -122,7 +122,7 @@
                                             {% for row in klasifikasiTesting %}
                                             <tr>
                                                 <td class="text-center">{{ loop.index }}</td>
-                                                <td class="text-wrap">{{ row.teks }}</td>
+                                                <td class="text-wrap">{{ row.preprocessing }}</td>
                                                 <td class="text-wrap">{{ row.label_aktual }}</td>
                                                 <td class="text-wrap">{{ row.label_prediksi }}</td>
                                             </tr>
@@ -148,7 +148,7 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="row my-3">
+            <div class="row my-3">
                 <div class="col-md-6 d-flex align-items-stretch">
                     <div class="card shadow w-100">
                         <div class="card-body">
@@ -161,7 +161,7 @@
                         </div>
                     </div>
                 </div>
-            </div> -->
+            </div>
         </div>
     </div>
 </div>
