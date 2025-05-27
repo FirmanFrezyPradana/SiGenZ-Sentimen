@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, flash,render_template,request
+from flask import Blueprint, redirect, url_for, flash,render_template, jsonify, request
 from db_config import db
 from preprocessing import preprocess_texts
 from models import DataSentimen, Preprocessing
@@ -24,8 +24,7 @@ def preprocessing_data():
         # Ambil data dari model DataSentimen
         data_sentimen = DataSentimen.query.with_entities(DataSentimen.teks, DataSentimen.labels).all()
         if not data_sentimen:
-            flash("Tidak ada data yang tersedia untuk preprocessing.", "danger")
-            return redirect(url_for('preprocessing.page_preprocessing'))
+            return jsonify({'status': 'error', 'message': 'Tidak ada data yang tersedia untuk preprocessing.'})
 
         # Ubah ke DataFrame
         teks_list = [d.teks for d in data_sentimen]
@@ -36,6 +35,7 @@ def preprocessing_data():
         db.session.execute(text("TRUNCATE TABLE preprocessing"))
         db.session.execute(text("TRUNCATE TABLE data_tfidf"))
         db.session.commit()
+
         records = [
             Preprocessing(teks=row['teks'], labels=row['labels'], preprocessing_text=row['preprocessing_text'])
             for _, row in df.iterrows()
@@ -43,10 +43,8 @@ def preprocessing_data():
         db.session.bulk_save_objects(records)
         db.session.commit()
 
-        flash("Preprocessing berhasil dilakukan!", "success")
-        return redirect(url_for('preprocessing.page_preprocessing', status='preprocess_success'))
+        return jsonify({'status': 'success'})
 
     except Exception as error:
         db.session.rollback()
-        flash(f"Terjadi kesalahan: {error}", "danger")
-        return redirect(url_for('preprocessing.page_preprocessing'))
+        return jsonify({'status': 'error', 'message': str(error)})
