@@ -21,7 +21,7 @@ def page_tfidf():
         flash(f'Terjadi kesalahan: {str(e)}', 'error')
         return render_template('tfidf.html', data=[])
 
-@pembobotan_bp.route('/proses-tfidf', methods=['GET'])
+@pembobotan_bp.route('/proses-tfidf', methods=['POST'])
 def proses_tfidf():
     try:
         # ========================================== ambil data dari tabel ================================================
@@ -29,8 +29,8 @@ def proses_tfidf():
         db.session.execute(text("TRUNCATE TABLE data_tfidf"))
         db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
         if not data_preprocessing:
-            flash ("tidak ada data pada preprocessing yang trsedia .","danger")
-            return redirect(url_for('pembobotan.page_tfidf'))
+            return jsonify({'status': 'error', 'message': 'Tidak ada data pada preprocessing yang tersedia.'})
+
         # menyiapkan daftar teks asli, teks hasil preprocessing, dan label dari dataset
         teks = [row.teks for row in data_preprocessing]
         preprocessing_texts = [row.preprocessing_text for row in data_preprocessing]
@@ -77,19 +77,17 @@ def proses_tfidf():
         # ========================================== split data ================================================
         split_data()
         # ========================================== redirect succses ================================================
-        return redirect(url_for('pembobotan.page_tfidf', status='tfidf_success'))
+        return jsonify({'status': 'success'})
 
     except Exception as error:
         db.session.rollback()
-        flash(f"Terjadi kesalahan :{error}","danger")
-        return jsonify({'error': str(error)})
+        return jsonify({'status': 'error', 'message': {str(error)}})
 
 def split_data():
     try:
         data = DataTFIDF.query.all()
         if not data:
-            flash("Data TF-IDF kosong. Tidak dapat melakukan split.", "warning")
-            return
+            return jsonify({'status': 'error', 'message': 'Tidak ada data. Tidak dapat melakukan split.'})
 
         df = pd.DataFrame([{
             'teks': d.teks,
@@ -118,7 +116,7 @@ def split_data():
             ))
 
         db.session.commit()
-        flash('Data Berhasil di split ke dalam data training dan testing!','success')
+        return jsonify({'status': 'success'})
     except Exception as error:
         db.session.rollback()
-        flash(f"Terjadi kesalahan saat split data: {error}", "danger")
+        return jsonify({'status': 'error', 'message': str(error)})
