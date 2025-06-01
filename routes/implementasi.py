@@ -139,9 +139,9 @@ def implementasiSvm():
         # ========================================== evaluasi model ================================================
         # Inisialisasi nilai untuk TP, TN, FP, FN
         tp = tn = fp = fn = 0
-        # data = []
 
-        # Iterasi melalui semua data untuk menghitung TP, TN, FP, FN
+
+        ##Iterasi melalui semua data untuk menghitung TP, TN, FP, FN
         for i in range(len(y_test)):
             if y_test[i] == -1 and y_pred[i] == -1:  # True Negative
                 tn += 1
@@ -166,10 +166,8 @@ def implementasiSvm():
                 metrics['recall'] = round(metrics['recall'] * 100, 2)
                 metrics['f1_score'] = round(metrics['f1-score'] * 100, 2)
         # ========================================== evaluasi model ================================================
-        cm = confusion_matrix(y_test, y_pred, labels=[-1, 1])
-        cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[-1, 1])
-        # cm = confusion_matrix(y_test, y_pred, labels=[1, -1])
-        # cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[-1, 1])
+        cm = confusion_matrix(y_test, y_pred, labels=[1, -1])
+        cm_display = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Positif", "Negatif"])
         cm_display.plot(cmap='Blues', values_format='d')
 
         confusion_matrix_path = os.path.join("static", "images", "confusion_matrix.png")
