@@ -24,7 +24,7 @@ def compute_tfidf(documents):
 #     tf_list = []
 
 #     # for doc in documents:
-#     for doc in enumerate(documents):
+#     for doc in documents: #enumerate(documents):
 #         # hitung kemunculan kata
 #         tf_counts = defaultdict(int)
 #         words = doc.split()
