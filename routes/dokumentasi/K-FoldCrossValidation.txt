@@ -1,0 +1,27 @@
+## jangan lupa import
+from sklearn.model_selection import StratifiedKFold
+      # ========================================== testing k-fold cross validation ================================================
+        # # pengujian Stratified K-Fold
+        # k = 5  # Jumlah fold
+        # skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=0)
+
+        # accuracies = []
+        # fold_number = 1
+
+        # for train_index, val_index in skf.split(X_train, y_train):
+        #     X_fold_train, X_fold_val = X_train[train_index], X_train[val_index]
+        #     y_fold_train, y_fold_val = y_train[train_index], y_train[val_index]
+
+        #     svm_model = SVC(kernel='linear', C=1.0, class_weight='balanced', random_state=0)
+        #     model = svm_model.fit(X_fold_train, y_fold_train)
+        #     y_pred = model.predict(X_fold_val)
+
+        #     acc = accuracy_score(y_fold_val, y_pred)
+        #     accuracies.append(acc)
+        #     print(f"=== Fold K{fold_number} ===")
+        #     print(f"Accuracy : {acc:.4f}")
+        #     print("----------------------------")
+        #     fold_number += 1
+        # # Rata-rata akurasi
+        # print(f"Rata-rata Accuracy: {np.mean(accuracies):.4f}")
+        # ========================================== testing k-fold cross validation ================================================

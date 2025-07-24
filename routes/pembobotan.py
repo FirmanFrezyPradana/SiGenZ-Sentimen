@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from flask import Blueprint, jsonify, redirect, url_for, render_template, flash
+from flask import Blueprint, jsonify,render_template, flash,request
 from db_config import db
 ## manual
 # from tfidf import compute_tfidf,compute_idf,saveTFIDF
@@ -85,6 +85,7 @@ def proses_tfidf():
 
 def split_data():
     try:
+        split_ratio = request.json.get('split_ratio', 0.8)
         data = DataTFIDF.query.all()
         if not data:
             return jsonify({'status': 'error', 'message': 'Tidak ada data. Tidak dapat melakukan split.'})
@@ -96,8 +97,10 @@ def split_data():
             'tfidf': d.tfidf
         } for d in data])
 
+        test_size = 1.0 - float(split_ratio)
+
         # Split data
-        train_data, test_data = train_test_split(df, test_size=0.2, random_state=42)
+        train_data, test_data = train_test_split(df, test_size=test_size, random_state=42)
 
         for _, row in train_data.iterrows():
             db.session.add(DataTraining(

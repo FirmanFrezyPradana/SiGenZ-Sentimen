@@ -3,7 +3,6 @@ from models import DataTFIDF,klasifikasiTestingModel,DataTraining,DataTesting
 import numpy as np
 from db_config import db
 from sklearn.svm import SVC
-from sklearn.model_selection import StratifiedKFold
 # from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report,confusion_matrix,ConfusionMatrixDisplay,accuracy_score, precision_score, recall_score, f1_score, classification_report
 
@@ -20,7 +19,7 @@ implementasiSvm_bp = Blueprint('implementasiSvm', __name__)
 @implementasiSvm_bp.route('/hal_klasifikasi',methods=['GET'])
 def implementasiSvm():
     try:
-        # ========================================== data training ================================================
+        # ========================================== proses training datata ================================================
         # Ambil data training dari tabel DataTraining
         data_training = DataTraining.query.all()
 
@@ -31,7 +30,7 @@ def implementasiSvm():
 
         X_train, y_train = [], [],
 
-        # Konversi data TF-IDF dan label
+        # Konversi data TF-IDF dan label = svm light
         for item in data_training:
             try:
                 tfidf_vector = list(map(float, item.tfidf.split(',')))
@@ -51,30 +50,6 @@ def implementasiSvm():
         y_train = np.array(y_train)
 
         # ========================================== testing k-fold cross validation ================================================
-        # # pengujian Stratified K-Fold
-        # k = 5  # Jumlah fold
-        # skf = StratifiedKFold(n_splits=k, shuffle=True, random_state=0)
-
-        # accuracies = []
-        # fold_number = 1
-
-        # for train_index, val_index in skf.split(X_train, y_train):
-        #     X_fold_train, X_fold_val = X_train[train_index], X_train[val_index]
-        #     y_fold_train, y_fold_val = y_train[train_index], y_train[val_index]
-
-        #     svm_model = SVC(kernel='linear', C=1.0, class_weight='balanced', random_state=0)
-        #     model = svm_model.fit(X_fold_train, y_fold_train)
-        #     y_pred = model.predict(X_fold_val)
-
-        #     acc = accuracy_score(y_fold_val, y_pred)
-        #     accuracies.append(acc)
-        #     print(f"=== Fold K{fold_number} ===")
-        #     print(f"Accuracy : {acc:.4f}")
-        #     print("----------------------------")
-        #     fold_number += 1
-        # # Rata-rata akurasi
-        # print(f"Rata-rata Accuracy: {np.mean(accuracies):.4f}")
-        # ========================================== testing k-fold cross validation ================================================
 
         # Training model SVM
         svm_model = SVC(kernel='linear', C=1.0, class_weight='balanced',random_state=0)
@@ -85,7 +60,7 @@ def implementasiSvm():
         with open('static/model/model_svm_linear.pkl', 'wb') as model_file:
             pickle.dump(model, model_file)
 
-        # ========================================== data testing ================================================
+        # ========================================== proses testing data ================================================
         # Kosongkan tabel klasifikasi hasil sebelumnya
         db.session.execute(text("TRUNCATE TABLE klasifikasiTestingModel"))
 
@@ -98,7 +73,7 @@ def implementasiSvm():
 
         X_test, y_test, teks_test, prep_test = [], [], [], []
 
-        # Siapkan data uji coba
+        # Siapkan data uji coba svm light
         for item in data_testing:
             try:
                 tfidf_vector = list(map(float, item.tfidf.split(',')))
@@ -136,7 +111,7 @@ def implementasiSvm():
             )
             db.session.add(hasil)
         db.session.commit()
-        # ========================================== evaluasi model ================================================
+        # ========================================== hitung evaluasi model ================================================
         # Inisialisasi nilai untuk TP, TN, FP, FN
         tp = tn = fp = fn = 0
 
