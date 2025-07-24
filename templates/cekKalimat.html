@@ -1,0 +1,79 @@
+{% extends "base.html" %} {% block title %}Sample{% endblock %}
+{% block content %}
+<div class="col-md-12 grid-margin">
+    <div class="row">
+        <div class="card-body">
+            <h3 class="font-weight-bold">Cek kalimat</h3>
+            <h6 class="font-weight-normal mb-0"> Masukkan kalimat untuk mengecek kalimat</h6>
+        </div>
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-body ">
+                    <form action="" method="post" class="mt-3">
+                        <div class="mb-3">
+                            <input type="text" class="form-control" name="teks" placeholder="Masukkan kalimat"
+                                aria-label="Masukkan kalimat" value="{{ teks }}">
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-primary">Cek Kalimat</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12 mt-3">
+            <div class="card shadow w-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Hasil</h6>
+                </div>
+                <div class="card-body">
+                    <p>Kalimat : {{ teks }} </p>
+                    <p>Preprosessing : {{ preprocessing_teks }} </p>
+                    <p>Hasil : <span class="badge {{ badge }}">{{ label_prediksi }}</span> </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='vendors/datatables/jquery.dataTables.min.js')}}"></script>
+<script src="{{ url_for('static', filename='vendors/datatables/dataTables.bootstrap4.min.js')}}"></script>
+<script>
+
+    $('#myTable').DataTable();
+    $(function () {
+        setTimeout(() => $("#message").alert('close'), 4000); // 3 detik
+    });
+
+    // Ambil data dari Flask (Jinja2 Template)
+    const jumlah_positif = "{{ positif_klas }}";
+    const jumlah_negatif = "{{ negatif_klas }}";
+
+
+    const data = {
+        labels: [
+            'Positif',
+            'Negatif'
+        ],
+        datasets: [{
+            label: 'Klasifikasi prediksi',
+            data: [jumlah_positif, jumlah_negatif],
+            backgroundColor: [
+                'rgb(87, 143, 202)',
+                'rgb(73, 61, 158)',
+            ],
+            hoverOffset: 4
+        }]
+    };
+    const config = {
+        type: 'bar',
+        data: data,
+    };
+    var myChart = new Chart(
+        document.getElementById('myChart'),
+        config
+    )
+</script>
+{% endblock %}
