@@ -144,7 +144,11 @@ def preprocess_texts(teks, labels=None):
     try:
         df = pd.DataFrame({'teks': teks, 'labels': labels})
         df['teks'] = df['teks'].astype(str)
-        df['labels'] = df['labels'].astype(str)
+        print('start prep')
+        # df['labels'] = df['labels'].astype(str)
+        if labels is not None:
+            df['labels'] = labels
+            df['labels'] = df['labels'].astype(str)
         df['cleaning_text'] = df['teks'].apply(cleaning_text)
         df['lower_text'] = df['cleaning_text'].apply(case_folding)
         df['tokenized_text'] = df['lower_text'].apply(tokenizing)
@@ -154,7 +158,7 @@ def preprocess_texts(teks, labels=None):
         df['stopword_text'] = df['converted_negation'].apply(stopword_removal)
         df['hasil_text'] = df['stopword_text'].apply(stemmed)
         df['preprocessing_text'] = df['hasil_text'].apply(lambda x: ' '.join(x) if isinstance(x, list) else x)
-
+        print('finish prep')
         return df
     except Exception as e:
         flash(f"terjadi kesalahan saat preprocessing data: {e}", "danger")

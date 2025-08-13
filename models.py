@@ -44,3 +44,10 @@ class klasifikasiTestingModel(db.Model):
     preprocessing = db.Column(db.Text, nullable=False)
     label_aktual = db.Column(db.String(10), nullable=False)
     label_prediksi = db.Column(db.String(10), nullable=False)
+
+class testingModel(db.Model):
+    __tablename__ = 'testing'
+    id = db.Column(db.Integer, primary_key=True)
+    teks = db.Column(db.Text, nullable=False)
+    preprocessing = db.Column(db.Text, nullable=False)
+    label_prediksi = db.Column(db.String(10), nullable=False)
